@@ -19,7 +19,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
         <div>
           <h1>Acessar sistema</h1>
           <p style={{ marginTop: 8 }}>
-            Área exclusiva para mentorados. Digite o e-mail que você usou na compra e enviamos um código de acesso.
+            Área exclusiva para mentorados. Digite o e-mail que você usou na compra para entrar.
           </p>
         </div>
         <LoginForm next={destino} />

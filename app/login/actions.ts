@@ -5,80 +5,56 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { caminhoSeguro, registrarAcesso } from "@/lib/acesso";
 
-export type Estado = {
-  etapa: "email" | "codigo";
-  email?: string;
-  erro?: string;
-  info?: string;
-};
+export type Estado = { erro?: string; email?: string };
 
 const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Etapa 1: confere se o e-mail está liberado e envia o código por e-mail. */
-export async function pedirCodigo(_antes: Estado, form: FormData): Promise<Estado> {
+/**
+ * Entra só com o e-mail: se estiver na lista de mentorados ativos, o servidor cria
+ * a sessão na hora. Nenhum e-mail é enviado.
+ */
+export async function entrar(_antes: Estado, form: FormData): Promise<Estado> {
   const email = String(form.get("email") ?? "").trim().toLowerCase();
-  if (!EMAIL_OK.test(email)) return { etapa: "email", erro: "Digite um e-mail válido." };
+  const destino = caminhoSeguro(form.get("next"));
+  if (!EMAIL_OK.test(email)) return { email, erro: "Digite um e-mail válido." };
 
+  const admin = supabaseAdmin();
+
+  // 1) Está na lista e ativo?
   let ativo: boolean | null = null;
   try {
-    const { data, error } = await supabaseAdmin()
-      .from("mentorados")
-      .select("ativo")
-      .eq("email", email)
-      .maybeSingle();
+    const { data, error } = await admin.from("mentorados").select("ativo").eq("email", email).maybeSingle();
     if (error) throw error;
     ativo = data ? data.ativo : null;
   } catch {
-    return { etapa: "email", erro: "Não foi possível verificar o acesso agora. Tente de novo em instantes." };
+    return { email, erro: "Não foi possível verificar o acesso agora. Tente de novo em instantes." };
   }
-
   if (ativo === null) {
-    return {
-      etapa: "email",
-      email,
-      erro: "Não encontramos esse e-mail entre os mentorados. Use o e-mail que você usou na compra.",
-    };
+    return { email, erro: "Não encontramos esse e-mail entre os mentorados. Use o e-mail que você usou na compra." };
   }
   if (!ativo) {
-    return {
-      etapa: "email",
-      email,
-      erro: "O seu acesso está inativo. Fale com a equipe no grupo da mentoria.",
-    };
+    return { email, erro: "O seu acesso está inativo. Fale com a equipe no grupo da mentoria." };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-  if (error) {
-    return {
-      etapa: "email",
-      email,
-      erro: "Não foi possível enviar o código agora. Espere um minuto e tente de novo.",
-    };
-  }
-  return { etapa: "codigo", email, info: `Enviamos um código para ${email}. Veja também o spam.` };
-}
+  // 2) Cria a sessão sem enviar e-mail (gera o token no servidor e já usa).
+  try {
+    let { data, error } = await admin.auth.admin.generateLink({ type: "magiclink", email });
+    if (error || !data?.properties?.hashed_token) {
+      // primeira vez desta pessoa: cria o usuário e tenta de novo
+      const criado = await admin.auth.admin.createUser({ email, email_confirm: true });
+      if (criado.error && !/already|registered|exists/i.test(criado.error.message)) throw criado.error;
+      ({ data, error } = await admin.auth.admin.generateLink({ type: "magiclink", email }));
+    }
+    const token = data?.properties?.hashed_token;
+    if (error || !token) throw error ?? new Error("sem token");
 
-/** Etapa 2: confere o código e entra. */
-export async function validarCodigo(_antes: Estado, form: FormData): Promise<Estado> {
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
-  const codigo = String(form.get("codigo") ?? "").replace(/\D/g, "");
-  const destino = caminhoSeguro(form.get("next"));
-  if (!EMAIL_OK.test(email) || codigo.length < 6) {
-    return { etapa: "codigo", email, erro: "Digite o código de 6 dígitos que chegou no seu e-mail." };
+    const supabase = await createClient();
+    const { error: erroSessao } = await supabase.auth.verifyOtp({ token_hash: token, type: "magiclink" });
+    if (erroSessao) throw erroSessao;
+  } catch {
+    return { email, erro: "Não foi possível entrar agora. Tente de novo em instantes." };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ email, token: codigo, type: "email" });
-  if (error) return { etapa: "codigo", email, erro: "Código inválido ou vencido. Peça um novo." };
-
-  // Confere de novo a lista (e marca o acesso).
-  const admin = supabaseAdmin();
-  const { data } = await admin.from("mentorados").select("ativo").eq("email", email).maybeSingle();
-  if (!data || !data.ativo) {
-    await supabase.auth.signOut();
-    return { etapa: "email", erro: "O seu acesso não está liberado. Fale com a equipe no grupo da mentoria." };
-  }
   await admin.from("mentorados").update({ ultimo_acesso: new Date().toISOString() }).eq("email", email);
   await registrarAcesso(email, "login");
 

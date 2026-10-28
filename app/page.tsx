@@ -69,7 +69,7 @@ export default function Inicio() {
                 <li><b>01</b><span>Ferramentas para planejar a operação e as postagens</span></li>
                 <li><b>02</b><span>Guias e aulas práticas, direto ao ponto</span></li>
                 <li><b>03</b><span>Workflows prontos para o Dominion Flow</span></li>
-                <li><b>04</b><span>Acesso por e-mail, sem senha para lembrar</span></li>
+                <li><b>04</b><span>Entrada só com o e-mail da compra, sem senha</span></li>
               </ul>
             </div>
           </div>
