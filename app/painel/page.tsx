@@ -32,8 +32,8 @@ export default function Painel() {
           <nav aria-label="Seções">
             <a href="#ferramentas">Ferramentas</a>
             <a href="#flow" className="hide-m">Dominion Flow</a>
-            <a href="#regras">Regras</a>
             <a href="#race" className="hide-m">Race</a>
+            <a href="#regras">Regras</a>
             <NomeTopo />
           </nav>
           <form action={sair}>
@@ -117,6 +117,12 @@ export default function Painel() {
           </div>
         </section>
 
+        <section id="race">
+          <div className="wrap">
+            <RaceCompleta />
+          </div>
+        </section>
+
         <section id="regras">
           <div className="wrap">
             <div className="sec-head">
@@ -145,11 +151,6 @@ export default function Painel() {
           </div>
         </section>
 
-        <section id="race">
-          <div className="wrap">
-            <RaceCompleta />
-          </div>
-        </section>
       </main>
 
       <footer>
