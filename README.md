@@ -5,6 +5,16 @@ Site da Dominion Mentory em Next.js, com login só pelo e-mail da compra para os
 - **Público:** página inicial (`/`) com a mentoria, o mentor, a Dominion Race e o botão "Acessar sistema".
 - **Restrito a mentorados ativos:** painel (`/painel`), ferramentas (`/ferramentas/*`), workflows (`/dominion-flow`, `/workflows/*`) e as imagens das aulas (`/img/*`, exceto logo e foto do mentor).
 
+## Contas e onde cada coisa roda
+
+| Serviço | Conta | Para quê |
+|---|---|---|
+| Supabase | `dominion.mentory@gmail.com` | Banco (tabelas `mentorados` e `acessos`) e autenticação |
+| Vercel | `gustavostofel2@gmail.com` | Hospedagem do site |
+| GitHub | `gustavostofel2-arch/dominion-mentory` (privado) | Código |
+
+As chaves do Supabase ficam só nas variáveis de ambiente da Vercel. Nunca colocar no GitHub.
+
 ## Como o acesso funciona
 
 1. A pessoa digita o e-mail da compra em `/login`.

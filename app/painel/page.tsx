@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { exigirMentorado } from "@/lib/acesso";
 import { sair } from "../login/actions";
-import { FLOW_URL, GRUPOS, ICONES, REGRAS, TOTAL_FERRAMENTAS, WHATSAPP } from "@/lib/conteudo";
+import { FLOW_URL, GRUPOS, ICONES, REGRAS, REGULAMENTO_RACE, TOTAL_FERRAMENTAS, WHATSAPP } from "@/lib/conteudo";
 
 export const metadata = { title: "Painel | Dominion Mentory", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -36,7 +36,8 @@ export default async function Painel() {
             <a href="#ferramentas">Ferramentas</a>
             <Link href="/dominion-flow" className="hide-m">Workflows</Link>
             <a href="#regras">Regras</a>
-            <span className="who hide-m" title={m.email}>{m.email}</span>
+            <a href="#race" className="hide-m">Race</a>
+            <span className="who hide-m" title={m.email}>{m.nome?.trim() || m.email}</span>
           </nav>
           <form action={sair}>
             <button className="btn sm" type="submit">Sair</button>
@@ -137,6 +138,33 @@ export default async function Painel() {
                     <span className="n">{i + 1}</span>
                     <span className="tt">{r.titulo}</span>
                     {r.rigida && <span className="tag">Regra rígida</span>}
+                    <svg className="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </summary>
+                  <div className="body" dangerouslySetInnerHTML={{ __html: r.html }} />
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="race">
+          <div className="wrap">
+            <div className="sec-head">
+              <span className="eyebrow">Turma 1</span>
+              <h2>Regulamento da Dominion Race</h2>
+              <p>
+                Pódio de faturamento (R$ 1.000, R$ 500 e R$ 200 em Pix) e Dominion MVP. Leia com atenção antes de enviar
+                o seu resultado.
+              </p>
+            </div>
+            <div className="rules">
+              {REGULAMENTO_RACE.map((r, i) => (
+                <details className="rule" key={r.titulo}>
+                  <summary>
+                    <span className="n">{i + 1}</span>
+                    <span className="tt">{r.titulo}</span>
                     <svg className="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="m6 9 6 6 6-6" />
                     </svg>
