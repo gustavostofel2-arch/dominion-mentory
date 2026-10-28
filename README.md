@@ -3,16 +3,26 @@
 Site da Dominion Mentory em Next.js, com login só pelo e-mail da compra para os mentorados.
 
 - **Público:** página inicial (`/`) com a mentoria, o mentor, a Dominion Race e o botão "Acessar sistema".
-- **Restrito a mentorados ativos:** painel (`/painel`), ferramentas (`/ferramentas/*`), workflows (`/dominion-flow`, `/workflows/*`) e as imagens das aulas (`/img/*`, exceto logo e foto do mentor).
+- **Restrito a mentorados ativos:** painel (`/painel`), ferramentas (`/ferramentas/*`) e as imagens das aulas (`/img/*`, exceto logo e foto do mentor). Os workflows ficam dentro do Dominion Flow, não neste site.
+
+## Contas e onde cada coisa roda
+
+| Serviço | Conta | Para quê |
+|---|---|---|
+| Supabase | `dominion.mentory@gmail.com` | Banco (tabelas `mentorados` e `acessos`) e autenticação |
+| Vercel | `gustavostofel2@gmail.com` | Hospedagem do site |
+| GitHub | `gustavostofel2-arch/dominion-mentory` (privado) | Código |
+
+As chaves do Supabase ficam só nas variáveis de ambiente da Vercel. Nunca colocar no GitHub.
 
 ## Como o acesso funciona
 
 1. A pessoa digita o e-mail da compra em `/login`.
 2. O servidor confere se o e-mail está na tabela `mentorados` com `ativo = true`. Se não estiver, não entra.
 3. Estando liberado, o servidor cria a sessão na hora. **Não envia e-mail, código nem link.**
-4. **A cada acesso** a uma página ou arquivo restrito o servidor confere de novo se a pessoa continua ativa. Desativar um mentorado corta o acesso na hora, mesmo para quem já está logado.
+4. O servidor guarda um cookie assinado (`dm_ok`) dizendo que o e-mail foi conferido, e **só consulta o Supabase de novo a cada 5 minutos**. Isso deixa as páginas e as imagens rápidas. Desativar um mentorado corta o acesso em até 5 minutos, mesmo para quem já está logado. (O tempo muda com a variável opcional `SESSAO_TTL_S`, em segundos.)
 
-Os arquivos das ferramentas ficam em `private/` (fora de `public/`) e só saem pelo servidor depois da checagem. Não existe URL pública que entregue esses arquivos.
+As ferramentas e as imagens das aulas são **arquivos estáticos** em `public/` (rápidos, servidos pela CDN da Vercel). O `middleware.ts` roda na borda **antes** de entregar qualquer um deles e barra quem não estiver liberado. Depois de publicar, confirme abrindo uma imagem restrita em janela anônima: deve dar "Acesso restrito" (401) ou ir para o login.
 
 ## Configurar (uma vez)
 
@@ -65,15 +75,11 @@ npm run dev
 ```
 app/page.tsx            página inicial pública
 app/login/              login só com o e-mail (server action)
-app/painel/             painel dos mentorados (restrito)
-app/dominion-flow/      workflows para baixar (restrito)
-app/ferramentas/[slug]/ serve os HTMLs de private/ferramentas (restrito)
-app/img/[file]/         serve as imagens de private/img (restrito)
-app/workflows/[file]/   serve os .json de private/workflows (restrito)
-lib/acesso.ts           checagem de mentorado ativo
+app/painel/             painel dos mentorados (restrito, página estática)
+lib/sessao.ts           cookie assinado de acesso conferido
 lib/supabase/           clientes do Supabase
-middleware.ts           renova a sessão e barra quem não entrou
-private/                ferramentas, imagens e workflows (não públicos)
-public/img/             só logo e foto do mentor
+middleware.ts           O PORTEIRO: roda antes de qualquer página ou arquivo restrito
+public/ferramentas/     as ferramentas (HTML estático, restrito pelo porteiro)
+public/img/             imagens das aulas (restritas pelo porteiro); logo.png e higor.webp são públicas
 supabase/schema.sql     tabelas e regras de segurança
 ```

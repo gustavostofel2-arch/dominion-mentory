@@ -1,17 +1,31 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { entrar, type Estado } from "./actions";
 
 const INICIAL: Estado = {};
 
-export default function LoginForm({ next }: { next: string }) {
+export default function LoginForm() {
   const [estado, acao, enviando] = useActionState(entrar, INICIAL);
+  const [next, setNext] = useState("/painel");
+  useEffect(() => {
+    const n = new URLSearchParams(window.location.search).get("next") ?? "";
+    if (n.startsWith("/") && !n.startsWith("//")) setNext(n);
+  }, []);
 
   return (
     <form action={acao} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <input type="hidden" name="next" value={next} />
-      {estado.erro && <div className="erro" role="alert">{estado.erro}</div>}
+      {estado.erro && (
+        <div className="erro" role="alert">
+          {estado.erro}
+          {estado.detalhe && (
+            <div style={{ marginTop: 8, font: "400 .72rem var(--mono)", opacity: 0.85, wordBreak: "break-word" }}>
+              Detalhe técnico: {estado.detalhe}
+            </div>
+          )}
+        </div>
+      )}
       <div>
         <label htmlFor="email">E-mail da compra</label>
         <input

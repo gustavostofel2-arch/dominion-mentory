@@ -173,3 +173,26 @@ export const REGRAS: Regra[] = [
     html: "<p>Ajude, seja ajudado, comemore as vitórias dos colegas e mantenha o ambiente leve e motivador.</p>",
   },
 ];
+
+export const REGULAMENTO_RACE: Regra[] = [
+  {
+    titulo: "Período e prazo de envio",
+    html: "<p>A corrida da Turma 1 acontece de <b>01/11/2026 a 30/11/2026</b>. O faturamento é acumulativo durante todo este período, somando o GMV de <b>quantas contas você tiver</b>.</p><p>Você deve enviar o total de faturamento no grupo até <b>02/12</b> para análise. Depois dessa data, nenhuma comprovação será aceita e você fica de fora da disputa do pódio.</p>",
+  },
+  {
+    titulo: "Onde e como postar (obrigatório para o pódio)",
+    html: "<ul><li>Todas as postagens exclusivamente no tópico <b>Dominion Race</b> do grupo oficial da turma no Telegram.</li><li><b>Print/vídeo:</b> a comprovação deve mostrar a tela do total de GMV faturado, com o filtro de datas de <b>01/11 a 30/11</b>.</li><li><b>Relato da jornada:</b> junto com o print, conte a sua trajetória, o que está achando da mentoria, o que evoluiu nesse período e deixe seu depoimento.</li><li><b>Auditoria:</b> a comprovação pode ser feita por print, mas a equipe pode pedir vídeos ou imagens adicionais da tela do seu celular para validar os resultados.</li><li><b>Identificação:</b> no final da postagem, informe o seu <b>nome completo</b> e o <b>e-mail de compra</b> da mentoria.</li></ul>",
+  },
+  {
+    titulo: "Não serão aceitos",
+    html: "<ul><li>Envios após 02/12</li><li>Prints cortados</li><li>Prints sem o filtro de data correto</li><li>Envios sem o relato da jornada</li><li>Envios apenas com texto</li></ul>",
+  },
+  {
+    titulo: "Dominion MVP",
+    html: "<p>O prêmio para o aluno mais ativo, constante e colaborativo do grupo. O jogo aqui é na trincheira: ganha quem mais interagir no grupo de alunos, ajudar os outros mentorados com dúvidas e agregar valor de verdade.</p><p>O engajamento é monitorado de forma automática pelo nosso sistema, de olho em todas as mensagens e interações.</p><p><b>Prêmio:</b> surpresa + reconhecimento oficial.</p>",
+  },
+  {
+    titulo: "Regras gerais e apuração",
+    html: "<ul><li>O ranking será atualizado pela administração.</li><li>A participação é automática para todos os alunos da Turma 1.</li><li>É vedada a manipulação de dados, uso de contas de terceiros ou qualquer forma de fraude. Em caso de suspeita, a desclassificação pode ocorrer sem aviso prévio.</li><li>A administração reserva o direito de solicitar comprovação adicional em caso de dúvida.</li><li>O resultado será anunciado na live de encerramento.</li><li>O Pix será pago em até 48 horas após a apuração final.</li></ul>",
+  },
+];

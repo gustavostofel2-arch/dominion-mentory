@@ -222,7 +222,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--body)}
 .opx .sum .pill{font-size:.78rem}
 
 </style></head><body>
-<div id="dm-bar" style="position:sticky;top:0;z-index:99999;display:flex;align-items:center;padding:9px max(16px,env(safe-area-inset-left,0px));padding-top:max(9px,env(safe-area-inset-top,0px));background:rgba(10,10,11,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid #2a2a31"><a href="/" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;background:#131316;color:#ffb020;border:1px solid rgba(255,176,32,.35);font:600 12px/1 'DM Sans',system-ui,sans-serif;text-decoration:none">&larr; Painel Dominion</a></div>
+<div id="dm-bar" style="position:sticky;top:0;z-index:99999;display:flex;align-items:center;padding:9px max(16px,env(safe-area-inset-left,0px));padding-top:max(9px,env(safe-area-inset-top,0px));background:rgba(10,10,11,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid #2a2a31"><a href="/painel" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;background:#131316;color:#ffb020;border:1px solid rgba(255,176,32,.35);font:600 12px/1 'DM Sans',system-ui,sans-serif;text-decoration:none">&larr; Painel Dominion</a></div>
 
 <div class="shell">
 <header class="sh-head">
@@ -394,8 +394,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--body)}
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>window.DM_LOAD=(function(){var u={pdf:"https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",xlsx:"https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"},p={};return function(k){if(p[k])return p[k];p[k]=new Promise(function(res,rej){var el=document.createElement("script");el.src=u[k];el.onload=res;el.onerror=function(){p[k]=null;rej(new Error("falha ao carregar "+k));};document.head.appendChild(el);});return p[k];};})();</script>
 <script>
 
 (function(){
@@ -826,7 +825,7 @@ document.addEventListener('click',function(e){
   if(!b)return;
   var w=Number(b.getAttribute('data-w'));
   var act=b.getAttribute('data-act');
-  if(act==='copy')copyText(w);else{toast(w,'Preparando o arquivo...');dlP.then(function(){if(act==='xlsx')saveXlsx(w);else savePdf(w);});}
+  if(act==='copy')copyText(w);else{toast(w,'Preparando o arquivo...');Promise.all([dlP,window.DM_LOAD(act==='xlsx'?'xlsx':'pdf')]).then(function(){if(act==='xlsx')saveXlsx(w);else savePdf(w);},function(){toast(w,'Não foi possível carregar o recurso. Verifique a internet e tente de novo.');});}
 });
 document.addEventListener('input',function(e){var t=e.target;if(!t.matches||!t.matches('input[data-n]'))return;S.names[t.getAttribute('data-n')]=t.value;updateLight();});
 
@@ -951,8 +950,13 @@ try{
   window.addEventListener("hashchange", function(){ show((location.hash || "").replace("#", ""), true); });
 
   /* planilha completa */
-  function saveAll(msg){
-    if (typeof ExcelJS === "undefined"){ msg("Não foi possível montar o Excel agora. Recarregue a página."); return; }
+  function saveAll(msg, tentou){
+    if (typeof ExcelJS === "undefined"){
+      if (tentou){ msg("Não foi possível montar o Excel agora."); return; }
+      msg("Carregando o Excel...");
+      window.DM_LOAD("xlsx").then(function(){ saveAll(msg, true); }, function(){ msg("Não foi possível carregar o Excel. Verifique a internet e tente de novo."); });
+      return;
+    }
     var wb = new ExcelJS.Workbook(); wb.creator = "Dominion Mentory"; wb.created = new Date();
     try { window.DM_OP.buildOperacao(wb); window.DM_ORG.buildSheets(wb); }
     catch(e){ msg("Não foi possível montar o Excel agora."); return; }

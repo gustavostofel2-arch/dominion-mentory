@@ -218,3 +218,6 @@ footer .tagline{font:700 .85rem var(--display);color:var(--accent)}
 .dash-hero{padding-block:44px 0}
 .dash-hero h1{font-size:clamp(1.5rem,5vw,2.4rem);background:var(--chrome);-webkit-background-clip:text;background-clip:text;color:transparent;margin-top:8px}
 .dash-hero p{color:var(--muted);margin-top:10px;max-width:60ch}
+
+.box .prize{display:inline-block;font:500 .78rem var(--mono);color:var(--wait);background:var(--wait-soft);padding:4px 10px;border-radius:99px}
+.who{max-width:220px}
