@@ -2,8 +2,8 @@
 
 Site da Dominion Mentory em Next.js, com login só pelo e-mail da compra para os mentorados.
 
-- **Público:** página inicial (`/`) com a mentoria, o mentor, a Dominion Race e o botão "Acessar sistema".
-- **Restrito a mentorados ativos:** painel (`/painel`), ferramentas (`/ferramentas/*`) e as imagens das aulas (`/img/*`, exceto logo e foto do mentor). Os workflows ficam dentro do Dominion Flow, não neste site.
+- **Público:** só a tela de login (`/` e `/login`). Não existe página de vendas.
+- **Restrito a mentorados ativos:** painel (`/painel`), ferramentas (`/ferramentas/*`) e as imagens das aulas (`/img/*`, exceto o logo). Os workflows ficam dentro do Dominion Flow, não neste site.
 
 ## Contas e onde cada coisa roda
 
@@ -73,7 +73,7 @@ npm run dev
 ## Estrutura
 
 ```
-app/page.tsx            página inicial pública
+app/page.tsx            a raiz mostra a tela de login
 app/login/              login só com o e-mail (server action)
 app/painel/             painel dos mentorados (restrito, página estática)
 lib/sessao.ts           cookie assinado de acesso conferido

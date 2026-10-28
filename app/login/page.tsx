@@ -1,4 +1,3 @@
-import Link from "next/link";
 import LoginForm from "./LoginForm";
 
 export const metadata = { title: "Acessar sistema | Dominion Mentory", robots: { index: false } };
@@ -15,9 +14,6 @@ export default function Login() {
           </p>
         </div>
         <LoginForm />
-        <Link className="voltar" href="/">
-          &larr; Voltar para o início
-        </Link>
       </div>
     </main>
   );

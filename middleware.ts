@@ -72,8 +72,8 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
 
   const atual = await verificar(request.cookies.get(COOKIE_OK)?.value);
 
-  // Quem já está dentro não precisa ver o login.
-  if (pathname === "/login") {
+  // Quem já está dentro não precisa ver o login (a página inicial também é o login).
+  if (pathname === "/login" || pathname === "/") {
     if (atual) {
       const url = request.nextUrl.clone();
       const next = request.nextUrl.searchParams.get("next") ?? "";
@@ -114,5 +114,5 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
 }
 
 export const config = {
-  matcher: ["/painel/:path*", "/ferramentas/:path*", "/img/:path*", "/login"],
+  matcher: ["/", "/painel/:path*", "/ferramentas/:path*", "/img/:path*", "/login"],
 };
