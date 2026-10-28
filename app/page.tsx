@@ -68,7 +68,7 @@ export default function Inicio() {
               <ul className="pts">
                 <li><b>01</b><span>Ferramentas para planejar a operação e as postagens</span></li>
                 <li><b>02</b><span>Guias e aulas práticas, direto ao ponto</span></li>
-                <li><b>03</b><span>Workflows prontos para o Dominion Flow</span></li>
+                <li><b>03</b><span>Regras da comunidade e regulamento da Dominion Race</span></li>
                 <li><b>04</b><span>Entrada só com o e-mail da compra, sem senha</span></li>
               </ul>
             </div>
