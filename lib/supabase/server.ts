@@ -14,7 +14,7 @@ export async function createClient() {
         },
         setAll(list: { name: string; value: string; options: CookieOptions }[]) {
           try {
-            list.forEach(({ name, value, options }) => store.set(name, value, options));
+            list.forEach(({ name, value, options }) => store.set(name, value, { ...options, httpOnly: true }));
           } catch {
             // chamado de um Server Component: o middleware já renova a sessão
           }

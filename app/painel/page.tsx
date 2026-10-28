@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { exigirMentorado } from "@/lib/acesso";
+import { NomeTopo, Saudacao } from "../_components/Nome";
 import { sair } from "../login/actions";
 import { FLOW_URL, GRUPOS, ICONES, REGRAS, REGULAMENTO_RACE, TOTAL_FERRAMENTAS } from "@/lib/conteudo";
 
 export const metadata = { title: "Painel | Dominion Mentory", robots: { index: false } };
-export const dynamic = "force-dynamic";
 
 function Icone({ nome }: { nome: string }) {
   return (
@@ -21,10 +20,7 @@ function Icone({ nome }: { nome: string }) {
   );
 }
 
-export default async function Painel() {
-  const m = await exigirMentorado("/painel");
-  const primeiro = (m.nome ?? "").trim().split(/\s+/)[0];
-
+export default function Painel() {
   return (
     <>
       <header className="nav">
@@ -34,10 +30,10 @@ export default async function Painel() {
           </Link>
           <nav aria-label="Seções">
             <a href="#ferramentas">Ferramentas</a>
-            <Link href="/dominion-flow" className="hide-m">Workflows</Link>
+            <a href="#flow" className="hide-m">Dominion Flow</a>
             <a href="#regras">Regras</a>
             <a href="#race" className="hide-m">Race</a>
-            <span className="who hide-m" title={m.email}>{m.nome?.trim() || m.email}</span>
+            <NomeTopo />
           </nav>
           <form action={sair}>
             <button className="btn sm" type="submit">Sair</button>
@@ -48,7 +44,7 @@ export default async function Painel() {
       <main>
         <div className="wrap dash-hero">
           <span className="eyebrow">Painel do mentorado</span>
-          <h1>{primeiro ? `Olá, ${primeiro}` : "Bem-vindo ao sistema"}</h1>
+          <Saudacao />
           <p>
             {TOTAL_FERRAMENTAS} ferramentas e aulas à sua disposição. Escolha o que usar agora, abra e execute.
           </p>
@@ -103,8 +99,8 @@ export default async function Painel() {
                 <span className="tag">Acesso dos mentorados</span>
                 <h2>Dominion Flow</h2>
                 <p>
-                  Workflows que funcionam dentro do Google Flow para acelerar a sua produção. Baixe os fluxos prontos e
-                  importe no Dominion Flow.
+                  Workflows que funcionam dentro do Google Flow para acelerar a sua produção. Os fluxos prontos ficam
+                  dentro do próprio Dominion Flow. Entre com o seu login.
                 </p>
                 <small>Não é venda. Quem já é mentorado já tem acesso.</small>
               </div>
@@ -115,7 +111,6 @@ export default async function Painel() {
                     <path d="M7 17 17 7M8 7h9v9" />
                   </svg>
                 </a>
-                <Link className="btn" href="/dominion-flow">Baixar workflows prontos</Link>
               </div>
             </div>
           </div>

@@ -1,12 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { entrar, type Estado } from "./actions";
 
 const INICIAL: Estado = {};
 
-export default function LoginForm({ next }: { next: string }) {
+export default function LoginForm() {
   const [estado, acao, enviando] = useActionState(entrar, INICIAL);
+  const [next, setNext] = useState("/painel");
+  useEffect(() => {
+    const n = new URLSearchParams(window.location.search).get("next") ?? "";
+    if (n.startsWith("/") && !n.startsWith("//")) setNext(n);
+  }, []);
 
   return (
     <form action={acao} style={{ display: "flex", flexDirection: "column", gap: 14 }}>

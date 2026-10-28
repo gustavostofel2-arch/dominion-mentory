@@ -4,6 +4,9 @@
 // rotas (Node), por isso usa WebCrypto.
 
 export const COOKIE_OK = "dm_ok";
+// Cookie legível pelo navegador, só com o nome, para mostrar "Olá, Fulano" sem
+// precisar renderizar a página no servidor.
+export const COOKIE_NOME = "dm_nome";
 // Quanto tempo um acesso conferido vale. Desativar alguém passa a valer em até esse tempo.
 export const TTL_SEGUNDOS = Number(process.env.SESSAO_TTL_S ?? 300);
 
@@ -60,4 +63,12 @@ export const OPCOES_COOKIE = {
   secure: process.env.NODE_ENV === "production",
   path: "/",
   maxAge: TTL_SEGUNDOS,
+};
+
+export const OPCOES_COOKIE_NOME = {
+  httpOnly: false,
+  sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+  maxAge: 60 * 60 * 24 * 7,
 };

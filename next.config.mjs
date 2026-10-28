@@ -1,14 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Os HTMLs das ferramentas, as imagens e os workflows ficam em /private e são
-  // lidos pelo servidor (depois de checar o login). Sem isto a Vercel não os
-  // empacota junto com as funções.
-  outputFileTracingIncludes: {
-    "/ferramentas/[slug]": ["./private/ferramentas/**/*"],
-    "/img/[file]": ["./private/img/**/*"],
-    "/workflows/[file]": ["./private/workflows/**/*"],
-  },
   poweredByHeader: false,
+  // As ferramentas são arquivos estáticos em /public/ferramentas. O middleware
+  // confere o acesso ANTES de qualquer arquivo ser entregue; aqui só damos o
+  // endereço limpo (sem .html).
+  async rewrites() {
+    return {
+      beforeFiles: [{ source: "/ferramentas/:slug([a-z0-9-]+)", destination: "/ferramentas/:slug.html" }],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
 };
 
 export default nextConfig;
