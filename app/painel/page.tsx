@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { NomeTopo, Saudacao } from "../_components/Nome";
 import { sair } from "../login/actions";
-import { FLOW_URL, GRUPOS, ICONES, REGRAS, REGULAMENTO_RACE, TOTAL_FERRAMENTAS } from "@/lib/conteudo";
+import RaceCompleta from "../_components/RaceCompleta";
+import { FLOW_URL, GRUPOS, ICONES, REGRAS, TOTAL_FERRAMENTAS } from "@/lib/conteudo";
 
 export const metadata = { title: "Painel | Dominion Mentory", robots: { index: false } };
 
@@ -146,28 +147,7 @@ export default function Painel() {
 
         <section id="race">
           <div className="wrap">
-            <div className="sec-head">
-              <span className="eyebrow">Turma 1</span>
-              <h2>Regulamento da Dominion Race</h2>
-              <p>
-                Pódio de faturamento (R$ 1.000, R$ 500 e R$ 200 em Pix) e Dominion MVP. Leia com atenção antes de enviar
-                o seu resultado.
-              </p>
-            </div>
-            <div className="rules">
-              {REGULAMENTO_RACE.map((r, i) => (
-                <details className="rule" key={r.titulo}>
-                  <summary>
-                    <span className="n">{i + 1}</span>
-                    <span className="tt">{r.titulo}</span>
-                    <svg className="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
-                  </summary>
-                  <div className="body" dangerouslySetInnerHTML={{ __html: r.html }} />
-                </details>
-              ))}
-            </div>
+            <RaceCompleta />
           </div>
         </section>
       </main>
