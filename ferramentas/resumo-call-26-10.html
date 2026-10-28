@@ -1,0 +1,647 @@
+<!doctype html><html><head><link rel="icon" type="image/png" href="https://yhmteuxogzxdjevxlucv.supabase.co/storage/v1/object/public/flow/icon.png"><link rel="apple-touch-icon" href="https://yhmteuxogzxdjevxlucv.supabase.co/storage/v1/object/public/flow/icon.png"><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mapa de Estudos TikTok</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: seis abas (A a F) em grade, fundo preto e dourado, cards escuros, chips de filtro, calculadora e checklist. Mesmo padrão da aula de referência. */
+:root{
+  color-scheme:dark;
+  --bg:#0a0907; --surface:#14110c; --surface-2:#1d1810; --line:#352c18; --hover-line:#6a5524;
+  --ink:#f5efe0; --muted:#a99f88; --accent:#d4a73c; --accent-deep:#8a6a1c; --accent-soft:#2a2210; --accent-text:#e8c066; --on-accent:#120d02;
+  --note-line:#4a3a14; --note-ink:#f0dfae; --note-b:#ffffff;
+  --chrome:linear-gradient(180deg,#fff4cf 0%,#e8c066 48%,#a47b22 100%);
+  --tab-on:linear-gradient(160deg,#2a2210,#14110c 70%);
+  --glow:0 10px 50px -22px rgba(212,167,60,.55);
+  --info:#6bb4ff; --info-line:#2b5a86; --warn:#e08a2c; --warn-line:#7a5214; --bad:#f58a8a; --bad-line:#7a2f2a; --good:#9fe0a6; --good-line:#2f5a35; --ok-bg:#1f3a22; --star:#f5c542;
+  --display:"Unbounded","Arial Black",Arial,sans-serif;
+  --body:"DM Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    color-scheme:light;
+    --bg:#f6f3ea; --surface:#fffefa; --surface-2:#efe8d3; --line:#d9cca6; --hover-line:#a98a3a;
+    --ink:#1c1608; --muted:#5d543d; --accent:#dcb04a; --accent-deep:#bf8f22; --accent-soft:#f4e7bf; --accent-text:#765610; --on-accent:#1c1608;
+    --note-line:#d8c27a; --note-ink:#4a3a0c; --note-b:#1c1608;
+    --chrome:linear-gradient(180deg,#a37a14 0%,#6d4f0a 100%);
+    --tab-on:linear-gradient(160deg,#f4e7bf,#fffefa 70%);
+    --glow:0 10px 40px -24px rgba(150,110,20,.5);
+    --info:#1d5f9e; --info-line:#7fb0dc; --warn:#9a5a0a; --warn-line:#d8a455; --bad:#a82f2f; --bad-line:#e0a09a; --good:#1f6d2c; --good-line:#8fcf99; --ok-bg:#d9f0dc; --star:#b88a0a;
+  }
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f6f3ea; --surface:#fffefa; --surface-2:#efe8d3; --line:#d9cca6; --hover-line:#a98a3a;
+  --ink:#1c1608; --muted:#5d543d; --accent:#dcb04a; --accent-deep:#bf8f22; --accent-soft:#f4e7bf; --accent-text:#765610; --on-accent:#1c1608;
+  --note-line:#d8c27a; --note-ink:#4a3a0c; --note-b:#1c1608;
+  --chrome:linear-gradient(180deg,#a37a14 0%,#6d4f0a 100%);
+  --tab-on:linear-gradient(160deg,#f4e7bf,#fffefa 70%);
+  --glow:0 10px 40px -24px rgba(150,110,20,.5);
+  --info:#1d5f9e; --info-line:#7fb0dc; --warn:#9a5a0a; --warn-line:#d8a455; --bad:#a82f2f; --bad-line:#e0a09a; --good:#1f6d2c; --good-line:#8fcf99; --ok-bg:#d9f0dc; --star:#b88a0a;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:clamp(15px,1.05vw,17px)/1.55 var(--body);margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-block:clamp(14px,2.4vh,28px) 6vh;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.18}
+p{margin:0}
+button{font:inherit;color:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent-text);outline-offset:3px}
+.eyebrow{font:500 .72em var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--accent-text)}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 16px;flex-wrap:wrap}
+.title{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}
+.title h1{font-size:clamp(1.3rem,2.6vw,2.3rem);font-weight:900;letter-spacing:.03em;background:var(--chrome);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.tab{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:clamp(10px,1.6vh,16px) clamp(12px,1.2vw,20px);cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;transition:border-color .15s;min-width:0}
+.tab:hover{border-color:var(--hover-line)}
+.tab .L{font:900 clamp(1.4rem,2.4vw,2.2rem)/1 var(--display);background:var(--chrome);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tab b{font:700 clamp(.85rem,1.1vw,1.05rem) var(--display);display:block}
+.tab small{color:var(--muted);font-size:.78em}
+.tab>span:last-child{min-width:0}
+.tab[aria-selected="true"]{border-color:var(--accent);background:var(--tab-on);box-shadow:0 0 0 1px var(--accent) inset,var(--glow)}
+.panel{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:clamp(14px,2.2vh,26px) clamp(14px,1.8vw,28px);display:flex;flex-direction:column;gap:14px;min-width:0}
+.card h2{font-size:clamp(1.05rem,1.7vw,1.5rem)}
+.card h3{font-size:1rem}
+.lead{color:var(--muted);max-width:75ch}.lead b{color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:8px 16px;cursor:pointer;min-height:42px;font-weight:500;transition:border-color .15s}
+.chip:hover{border-color:var(--hover-line)}
+.chip[aria-pressed="true"]{background:linear-gradient(160deg,var(--accent),var(--accent-deep));color:var(--on-accent);border-color:transparent;font-weight:700}
+.btn{background:linear-gradient(160deg,var(--accent),var(--accent-deep));color:var(--on-accent);border:0;border-radius:12px;padding:10px 18px;min-height:44px;font-weight:700;cursor:pointer}
+.btn.ghost{background:var(--surface-2);color:var(--ink);border:1px solid var(--line);font-weight:500}
+.btn.ghost:hover{border-color:var(--hover-line)}
+.btn.ok{background:var(--ok-bg);color:var(--good);border:1px solid var(--good-line)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{background:var(--accent-soft);border:1px solid var(--note-line);border-radius:12px;padding:12px 16px;color:var(--note-ink);font-size:.92em}.note b{color:var(--note-b)}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tile{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tile small{font:500 .68em var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-text)}
+.tile b{font:700 clamp(1.1rem,2.2vw,1.5rem) var(--display);line-height:1.15;overflow-wrap:anywhere}
+.tile span{font-size:.82em;color:var(--muted)}
+.flow3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.step{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:3px;text-align:left;cursor:pointer;transition:border-color .15s;min-width:0}
+.step:hover{border-color:var(--accent)}
+.step b{font:700 .85em var(--mono);letter-spacing:.08em;color:var(--accent-text)}
+.step strong{font-weight:700}
+.step span{color:var(--muted);font-size:.9em}
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar{display:grid;grid-template-columns:minmax(150px,280px) 1fr 38px;gap:14px;align-items:center;background:none;border:0;border-bottom:1px solid var(--line);text-align:left;cursor:pointer;padding:10px 4px;min-width:0}
+.bar:hover .lab b{color:var(--accent-text)}
+.bar .lab{display:flex;flex-direction:column;min-width:0}
+.bar .lab b{font-weight:700}
+.bar .lab small{color:var(--muted)}
+.bar .track{height:12px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.bar .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent-deep),var(--accent))}
+.bar .n{font:500 .9em var(--mono);text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.hbc{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hbc span{font:700 .8em var(--mono);letter-spacing:.06em;padding:7px 12px;border-radius:10px;border:1px solid var(--good-line);color:var(--good)}
+.hbc i{font-style:normal;color:var(--muted)}
+.rr{display:grid;grid-template-columns:120px repeat(3,minmax(0,1fr));gap:12px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.rr .tg3{font:700 .85em var(--mono);letter-spacing:.1em;padding:6px 12px;border-radius:999px;border:1px solid;justify-self:start}
+.rr.bom{border-color:var(--info-line)}.rr.bom .tg3,.rr.bom .k{color:var(--info);border-color:var(--info-line)}
+.rr.med{border-color:var(--warn-line)}.rr.med .tg3,.rr.med .k{color:var(--warn);border-color:var(--warn-line)}
+.rr.ruim{border-color:var(--bad-line)}.rr.ruim .tg3,.rr.ruim .k{color:var(--bad);border-color:var(--bad-line)}
+.rr .tg3{background:transparent}
+.rr div.c{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rr small{font:500 .66em var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rr strong{font:700 clamp(1.1rem,3.6vw,1.9rem) var(--display);line-height:1.15}
+.rr .k{border:0}
+.gi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld label{font:500 .7em var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-text)}
+.fld input,.fld select{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:46px;color:var(--ink);font:inherit;width:100%;min-width:0}
+.fld input:focus{border-color:var(--accent)}
+.fld small{color:var(--muted);font-size:.8em}
+.verdict{border:1px solid var(--line);border-left:5px solid var(--muted);border-radius:12px;padding:16px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px;min-width:0;overflow-wrap:anywhere}
+.verdict.r{border-left-color:var(--bad)}.verdict.g{border-left-color:var(--info)}.verdict.a{border-left-color:var(--warn)}
+.verdict b{font:700 1.05em var(--display)}
+.key{font:500 .78em var(--mono);color:var(--muted)}
+.scale{position:relative;height:16px;border-radius:999px;margin:30px 6px 36px;background:linear-gradient(90deg,var(--info-line) 0 25%,var(--warn-line) 25% 71.25%,var(--bad-line) 71.25% 100%)}
+.scale i{position:absolute;top:-6px;width:2px;height:28px;background:var(--ink);opacity:.7}
+.scale i em{position:absolute;top:30px;left:50%;transform:translateX(-50%);font:500 .68em var(--mono);font-style:normal;color:var(--muted);white-space:nowrap}
+.scale .ptr{position:absolute;top:-26px;transform:translateX(-50%);color:var(--accent-text);font-size:1.1rem;line-height:1}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px}
+table.t{width:100%;border-collapse:collapse;min-width:420px}
+table.t th{font:500 .7em var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-text);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--muted)}
+table.t td:first-child{color:var(--ink);font-weight:700}
+table.t tr:last-child td{border-bottom:0}
+.stars{color:var(--star);letter-spacing:.1em}
+.acs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.box{background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.box .tag{font:500 .72em var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent-text)}
+.box.bom{border-left-color:var(--info)}.box.med{border-left-color:var(--warn)}.box.ruim{border-left-color:var(--bad)}
+.box .acao{color:var(--muted)}.box .acao b{color:var(--ink)}
+.rules{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px;color:var(--muted)}
+.rules b{color:var(--ink)}
+.rules li::marker{color:var(--accent-text)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.srch{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.srch input{flex:1 1 240px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;min-height:46px;color:var(--ink);font:inherit;min-width:0}
+.srch input:focus{border-color:var(--accent)}
+.count{font:500 .78em var(--mono);color:var(--muted)}
+.qa{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:0 16px}
+.qa[open]{border-color:var(--hover-line)}
+.qa summary{cursor:pointer;padding:14px 0;font-weight:700;display:flex;gap:12px;align-items:flex-start;justify-content:space-between;list-style:none}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary::after{content:"+";font:500 1.3em/1 var(--mono);color:var(--accent-text);flex:none}
+.qa[open] summary::after{content:"–"}
+.qa .ans{padding:0 0 16px;color:var(--muted);display:flex;flex-direction:column;gap:8px}
+.qa .ans b{color:var(--ink)}
+.qa .meta{display:flex;gap:8px;flex-wrap:wrap}
+.tg{font:500 .72em var(--mono);letter-spacing:.06em;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:8px}
+.cases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.case h3{font-size:.95rem}
+.ck{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.ck input{width:20px;height:20px;accent-color:var(--accent);margin-top:2px;flex:none}
+.ck:has(input:checked){border-color:var(--accent);color:var(--muted)}
+.ck:has(input:checked) span{text-decoration:line-through;text-decoration-color:var(--hover-line)}
+.prog{height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.prog>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent-deep),var(--accent));transition:width .25s}
+details.ad{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--bg)}
+details.ad summary{cursor:pointer;font:500 .75em var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-text);min-height:32px;display:flex;align-items:center}
+details.ad ul{margin:8px 0 4px}
+.foot{color:var(--muted);font-size:.85em;max-width:80ch}
+#cp{width:100%;min-height:90px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px;font:400 .85em/1.5 var(--mono)}
+@media (max-width:1000px){.gi{grid-template-columns:repeat(2,minmax(0,1fr))}.acs,.cases,.two{grid-template-columns:1fr}.flow3{grid-template-columns:repeat(2,minmax(0,1fr))}.title{align-items:flex-start;text-align:left}}
+@media (max-width:700px){
+  input,select,textarea{font-size:16px!important}
+  .tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .tab{flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px}
+  .tab small{display:none}
+  .tab .L{font-size:1.3rem}
+  .tab b{font-size:.78rem}
+  .tiles,.flow3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rr{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .rr .tg3{grid-column:1/-1}
+  .bar{grid-template-columns:1fr 34px;gap:6px 10px}
+  .bar .lab{grid-column:1/-1}
+  .bar .track{grid-column:1}
+}
+@media (max-width:420px){.tiles,.flow3,.gi{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Mentoria TikTok · aula de 26/10/2026</div>
+    <div class="title"><span class="eyebrow">Análise de contas com Higor Machado</span><h1>MAPA DE ESTUDOS</h1></div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Seções do mapa">
+    <button class="tab" role="tab" data-tab="mapa" aria-selected="true"><span class="L">A</span><span><b>Mapa</b><small>visão geral</small></span></button>
+    <button class="tab" role="tab" data-tab="metricas" aria-selected="false"><span class="L">B</span><span><b>Métricas</b><small>calculadora</small></span></button>
+    <button class="tab" role="tab" data-tab="planos" aria-selected="false"><span class="L">C</span><span><b>Planos</b><small>o que fazer</small></span></button>
+    <button class="tab" role="tab" data-tab="duvidas" aria-selected="false"><span class="L">D</span><span><b>Dúvidas</b><small>respondidas</small></span></button>
+    <button class="tab" role="tab" data-tab="casos" aria-selected="false"><span class="L">E</span><span><b>Casos</b><small>mentorados</small></span></button>
+    <button class="tab" role="tab" data-tab="acoes" aria-selected="false"><span class="L">F</span><span><b>Ações</b><small>checklist</small></span></button>
+  </nav>
+
+  <!-- A. MAPA -->
+  <section class="panel" id="p-mapa" role="tabpanel">
+    <div class="card">
+      <div class="eyebrow">Ideia central da aula</div>
+      <h2>Descubra onde a conta trava antes de postar mais vídeo</h2>
+      <p class="lead">A pergunta que guia toda a análise é <b>quantas visualizações são necessárias para fazer uma venda</b>. Olhe os cliques e as vendas de cada <b>1.000 impressões</b>, em janelas de <b>7 dias</b>. O resultado diz se você troca o gancho, sobe o volume de vídeos ou escala com produtos que pagam mais.</p>
+      <div class="tiles">
+        <div class="tile"><small>Mínimo de cliques</small><b>20 / 1.000</b><span>impressões do produto. Abaixo disso, suspeite de formato ou conta flopada.</span></div>
+        <div class="tile"><small>Janela de análise</small><b>7 dias</b><span>padrão para qualquer conta. Só pedidos pagos entram na conta.</span></div>
+        <div class="tile"><small>Limite do ruim</small><b>57 cliques</b><span>para 1 venda, a cada 1.000 impressões.</span></div>
+        <div class="tile"><small>Meta de consistência</small><b>100 vídeos</b><span>em 15 dias, mais de 10 por dia, no mesmo formato.</span></div>
+        <div class="tile"><small>Avaliar um formato</small><b>3 meses</b><span>visão conservadora para não se enganar com semanas ruins.</span></div>
+        <div class="tile"><small>Para ampliar impressões</small><b>5 a 10 vídeos</b><span>forçam o algoritmo a entregar o conteúdo.</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Trilha de estudo</h2>
+      <p class="lead">Siga na ordem. Cada passo abre a seção correspondente.</p>
+      <div class="flow3">
+        <button class="step" data-go="metricas"><b>PASSO 1</b><strong>Entender a ordem dos gargalos</strong><span>Alcance, impressões, cliques, compras, GMV.</span></button>
+        <button class="step" data-go="metricas"><b>PASSO 2</b><strong>Calcular as médias da conta</strong><span>Cliques por 1.000 impressões e cliques por venda.</span></button>
+        <button class="step" data-go="metricas"><b>PASSO 3</b><strong>Classificar a conta</strong><span>Ótima, média ou ruim, e estrelas por GMV.</span></button>
+        <button class="step" data-go="planos"><b>PASSO 4</b><strong>Aplicar o plano da faixa</strong><span>Gancho, volume ou produto campeão.</span></button>
+        <button class="step" data-go="duvidas"><b>PASSO 5</b><strong>Tirar dúvidas e ver casos</strong><span>Perguntas da turma e orientações dadas.</span></button>
+        <button class="step" data-go="acoes"><b>PASSO 6</b><strong>Executar e reavaliar</strong><span>Checklist com progresso salvo no seu navegador.</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Tópicos mais falados</h2>
+      <p class="lead">Contagem aproximada de quantos dos 50 blocos do resumo tocam em cada tema. Toque numa linha para ir à seção relacionada.</p>
+      <div class="bars" id="bars"></div>
+    </div>
+  </section>
+
+  <!-- B. MÉTRICAS -->
+  <section class="panel" id="p-metricas" role="tabpanel" hidden>
+    <div class="card">
+      <div class="eyebrow">Passo 1</div>
+      <h2>Ordem correta para achar o gargalo</h2>
+      <div class="hbc"><span>ALCANCE</span><i>→</i><span>IMPRESSÕES DO PRODUTO</span><i>→</i><span>CLIQUES</span><i>→</i><span>COMPRAS</span><i>→</i><span>GMV</span></div>
+      <p class="lead">Comece pelo primeiro elo e só avance quando ele estiver saudável. Conte apenas <b>pedidos pagos</b>: pedidos inelegíveis, gerados por erros de produtores, distorcem a estatística.</p>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Passo 2</div>
+      <h2>Faixas de referência por 1.000 impressões</h2>
+      <div class="rr bom"><span class="tg3">ÓTIMA</span><div class="c"><small>Cliques</small><strong class="k">15 ou 20</strong></div><div class="c"><small>Vendas</small><strong class="k">2 ou 1</strong></div><div class="c"><small>Cliques por venda</small><strong class="k">7,5 ou 20</strong></div></div>
+      <div class="rr med"><span class="tg3">MÉDIA</span><div class="c"><small>Cliques</small><strong class="k">30 a 40</strong></div><div class="c"><small>Vendas</small><strong class="k">1</strong></div><div class="c"><small>Cliques por venda</small><strong class="k">30 a 40</strong></div></div>
+      <div class="rr ruim"><span class="tg3">RUIM</span><div class="c"><small>Cliques</small><strong class="k">57</strong></div><div class="c"><small>Vendas</small><strong class="k">1</strong></div><div class="c"><small>Cliques por venda</small><strong class="k">57</strong></div></div>
+      <div class="note"><b>Média ideal de referência:</b> 1.000 impressões, 20 cliques no produto e 1 venda atribuída. A aula também citou eficiência entre 15 e 57 cliques por venda conforme o tipo de conta.</div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Passo 3</div>
+      <h2>Calculadora de conta</h2>
+      <p class="lead">Digite os números dos últimos 7 dias. Os valores que aparecem ao abrir são um exemplo, não dados da sua conta.</p>
+      <div class="chips" id="presets" aria-label="Exemplos prontos">
+        <button class="chip" data-p="1000,20,1,">Ótima da aula</button>
+        <button class="chip" data-p="1000,35,1,">Média da aula</button>
+        <button class="chip" data-p="1000,57,1,">Ruim da aula</button>
+        <button class="chip" data-p="15000,271,4,">Perfume árabe (aula)</button>
+        <button class="chip" data-p="107000,5400,83,3400">Conta agro (aula)</button>
+      </div>
+      <div class="gi">
+        <div class="fld"><label for="imp">Impressões</label><input id="imp" type="number" inputmode="decimal" min="0" value="1000"></div>
+        <div class="fld"><label for="cli">Cliques no produto</label><input id="cli" type="number" inputmode="decimal" min="0" value="35"></div>
+        <div class="fld"><label for="ven">Vendas pagas</label><input id="ven" type="number" inputmode="decimal" min="0" value="1"></div>
+        <div class="fld"><label for="gmv">GMV em 7 dias (R$)</label><input id="gmv" type="number" inputmode="decimal" min="0" placeholder="opcional"></div>
+      </div>
+      <div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))" id="calc-tiles">
+        <div class="tile"><small>Cliques / 1.000 imp.</small><b id="t-cpm">—</b><span id="s-cpm"></span></div>
+        <div class="tile"><small>Cliques por venda</small><b id="t-cpv">—</b><span id="s-cpv"></span></div>
+        <div class="tile"><small>Impressões por venda</small><b id="t-ipv">—</b><span>quanto alcance cada venda custa</span></div>
+        <div class="tile"><small>Estrelas</small><b id="t-star" class="stars">—</b><span id="s-star"></span></div>
+      </div>
+      <div class="scale" id="scale" aria-hidden="true">
+        <i style="left:25%"><em>20</em></i><i style="left:50%"><em>40</em></i><i style="left:71.25%"><em>57</em></i>
+        <span class="ptr" id="ptr" hidden>▼</span>
+      </div>
+      <div class="key">Escala de cliques por venda: 0 a 80. Posições de 20, 40 e 57 marcadas.</div>
+      <div class="verdict n" id="verdict"></div>
+      <div class="row"><button class="btn" id="copy">Copiar resumo</button><span class="key" id="copied" role="status"></span></div>
+      <textarea id="cp" hidden readonly aria-label="Resumo para copiar"></textarea>
+      <div class="note">As faixas de 20 a 30 e de 40 a 57 cliques por venda não foram citadas na aula; a calculadora trata a primeira como média e a segunda como zona de transição. O resumo usa 57 tanto como referência de "ruim" quanto como meta máxima do plano. Confira na gravação.</div>
+    </div>
+
+    <div class="card">
+      <h2>Classificação por estrelas</h2>
+      <p class="lead">Método interno criado pelo Higor com o ex-sócio Pedro. Mede o desempenho da conta independente do nível de GMV.</p>
+      <div class="tw"><table class="t">
+        <thead><tr><th>Nível</th><th>GMV em 7 dias</th></tr></thead>
+        <tbody>
+          <tr><td><span class="stars">★★</span> 2 estrelas</td><td>até 1 mil</td></tr>
+          <tr><td><span class="stars">★★★</span> 3 estrelas</td><td>mais de 10 mil</td></tr>
+          <tr><td><span class="stars">★★★★</span> 4 estrelas</td><td>mais de 80 mil</td></tr>
+        </tbody></table></div>
+      <div class="note"><b>Meta do mentor:</b> levar 20 contas da mentoria ao topo do ranking do TikTok. Os níveis de GMV 3, 4 e 5 exigem volume expressivo de impressões. Sair de 1 para 3 estrelas raramente foi visto na prática.</div>
+    </div>
+  </section>
+
+  <!-- C. PLANOS -->
+  <section class="panel" id="p-planos" role="tabpanel" hidden>
+    <div class="card">
+      <div class="eyebrow">Plano de ação por faixa</div>
+      <h2>O que fazer em cada situação</h2>
+      <div class="acs">
+        <div class="box ruim"><span class="tag">Conta ruim</span><h3>Trocar o gancho</h3>
+          <ul class="rules">
+            <li>Mantenha o <b>formato base, o corpo e a chamada para ação</b>.</li>
+            <li>Altere só o gancho dos <b>5 primeiros segundos</b>.</li>
+            <li>Teste ao menos <b>3 produtos novos</b> além dos atuais.</li>
+            <li>Meta: 1.000 impressões com <b>57 cliques ou menos</b> por venda.</li>
+          </ul></div>
+        <div class="box med"><span class="tag">Conta na média</span><h3>Subir o volume</h3>
+          <ul class="rules">
+            <li>Deixe de postar 3 vídeos e passe para <b>5 ou mais por dia</b>.</li>
+            <li>Não mexa no formato base, que já mostra estabilidade.</li>
+            <li>Mais volume eleva impressões e cliques e escala o resultado.</li>
+          </ul></div>
+        <div class="box bom"><span class="tag">Conta ótima</span><h3>Espremer o volume bruto</h3>
+          <ul class="rules">
+            <li>Produza <b>15 a 20 vídeos por dia</b>.</li>
+            <li>Busque produtos parecidos com <b>comissão maior</b>.</li>
+            <li>Rotacione <b>1 produto campeão por dia</b> em contas de contingência.</li>
+          </ul></div>
+      </div>
+      <div class="note">No plano das contas ótimas o resumo fala em 20 a 40 cliques e 1 venda, faixa que se sobrepõe à da média. Confira na gravação.</div>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <h2>Prazos que valem</h2>
+        <div class="tw"><table class="t">
+          <thead><tr><th>O quê</th><th>Prazo</th></tr></thead>
+          <tbody>
+            <tr><td>Janela de análise</td><td>7 dias, sempre</td></tr>
+            <tr><td>Consistência de volume</td><td>15 a 20 dias, cerca de 100 vídeos</td></tr>
+            <tr><td>Produto novo</td><td>30 a 90 dias antes de descartar</td></tr>
+            <tr><td>Formato funcionou?</td><td>3 meses (visão conservadora)</td></tr>
+            <tr><td>Teste híbrido (caso dennys)</td><td>2 de 8 vídeos por dia, 15 dias</td></tr>
+          </tbody></table></div>
+      </div>
+      <div class="card">
+        <h2>Cuidados com a conta</h2>
+        <ul class="rules">
+          <li><b>Nunca exclua vídeos.</b> O algoritmo penaliza. Coloque no modo privado.</li>
+          <li><b>Não misture formatos.</b> Dificulta ver o que o algoritmo premiou.</li>
+          <li><b>Voz aumenta o risco</b> de violações ligadas a texto. Pese contra a agilidade.</li>
+          <li><b>Vídeos com movimento de terceiros</b> copiam a identidade de outro perfil. Evite.</li>
+          <li><b>Seguidores são um mito.</b> Não afetam alcance nem impressões.</li>
+          <li><b>Perfil público</b> pode atrair cópia de outros criadores.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Escolha de produtos</h2>
+      <ul class="rules">
+        <li>Use o <b>Calodata</b> para ver pedidos em alta, taxa de cliques e adições ao carrinho.</li>
+        <li>Procure itens ou lojas que faturem <b>entre 100 mil e 200 mil por mês</b>.</li>
+        <li>Conversão varia: produto exclusivo se comporta diferente de roupa vendida por vários lojistas.</li>
+        <li>Valide <b>estoque e histórico do vendedor</b> antes de investir em vídeos.</li>
+        <li>Mais de 3 a 4 contas no mesmo nicho esgotam as possibilidades. Segmente, atinja e só depois lateralize.</li>
+        <li>Nichos citados com facilidade de produção: <b>agro, cristão e perfume árabe</b>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- D. DÚVIDAS -->
+  <section class="panel" id="p-duvidas" role="tabpanel" hidden>
+    <div class="card">
+      <div class="eyebrow">Perguntas da turma</div>
+      <h2>Dúvidas respondidas</h2>
+      <div class="srch">
+        <input id="q" type="search" placeholder="Buscar: estoque, gancho, 7 dias…" aria-label="Buscar dúvida">
+        <button class="btn ghost" id="toggle-all">Expandir tudo</button>
+      </div>
+      <div class="chips" id="qf" aria-label="Filtrar por tema"></div>
+      <div class="count" id="qcount" role="status"></div>
+      <div class="list" id="qlist"></div>
+    </div>
+  </section>
+
+  <!-- E. CASOS -->
+  <section class="panel" id="p-casos" role="tabpanel" hidden>
+    <div class="card">
+      <div class="eyebrow">Orientações dadas ao vivo</div>
+      <h2>Casos dos mentorados</h2>
+      <p class="lead">Use para comparar com a sua conta. Cada card traz a situação relatada e a recomendação do Higor.</p>
+      <div class="chips" id="cf" aria-label="Filtrar casos por tema"></div>
+      <div class="count" id="ccount" role="status"></div>
+      <div class="cases" id="clist"></div>
+    </div>
+  </section>
+
+  <!-- F. AÇÕES -->
+  <section class="panel" id="p-acoes" role="tabpanel" hidden>
+    <div class="card">
+      <div class="eyebrow">Seu plano</div>
+      <h2>Checklist de execução</h2>
+      <div class="prog" aria-hidden="true"><div id="pbar"></div></div>
+      <div class="row"><span class="count" id="ptxt" role="status"></span><button class="btn ghost" id="reset">Limpar marcações</button></div>
+      <div class="list" id="mine"></div>
+      <div class="note">As marcações ficam salvas só neste navegador.</div>
+    </div>
+    <div class="card">
+      <h2>Combinados da call</h2>
+      <p class="lead">Próximas etapas registradas no resumo, por pessoa.</p>
+      <div class="row"><button class="btn ghost" id="toggle-ppl">Expandir tudo</button></div>
+      <div class="list" id="ppl"></div>
+    </div>
+  </section>
+
+  <p class="foot">Material montado a partir das anotações automáticas do Gemini da reunião de 26/10/2026. Números e nomes seguem o resumo; confira os pontos duvidosos na gravação.</p>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- Abas ---------- */
+const TABS=['mapa','metricas','planos','duvidas','casos','acoes'];
+function show(id,user){
+  if(!TABS.includes(id)) id='mapa';
+  $$('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===id)));
+  $$('.panel').forEach(p=>{p.hidden=p.id!=='p-'+id});
+  try{localStorage.setItem('ms-tab',id)}catch(e){}
+  if(user){ if(location.hash!=='#'+id) location.hash=id; window.scrollTo(0,0); }
+}
+$$('.tab').forEach(t=>t.addEventListener('click',()=>show(t.dataset.tab,true)));
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]'); if(g) show(g.dataset.go,true)});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1),false));
+
+/* ---------- Tópicos mais falados ---------- */
+const TOPICS=[
+ {n:'Métricas por 1.000 impressões',c:15,d:'Cliques, vendas e gargalos',go:'metricas'},
+ {n:'Nichos',c:12,d:'Agro, cristão, perfume árabe, moda',go:'casos'},
+ {n:'Escolha de produtos',c:11,d:'Calodata, lojas maiores, comissão',go:'planos'},
+ {n:'Formatos e ganchos',c:11,d:'POV, UGC, showcase, híbrido',go:'duvidas'},
+ {n:'Consistência',c:9,d:'Um só formato e tempo para avaliar',go:'planos'},
+ {n:'Volume de vídeos',c:8,d:'De 3 para 5 e até 15 a 20 por dia',go:'planos'},
+ {n:'Riscos da conta',c:6,d:'Punições, conta flopada, voz',go:'duvidas'},
+ {n:'Ferramentas e automação',c:5,d:'Magnific, multiplicador, Domínio',go:'duvidas'},
+ {n:'Níveis de GMV e estrelas',c:4,d:'Classificação e ranking',go:'metricas'},
+ {n:'Fim de ano',c:2,d:'Black Friday, Natal, décimo terceiro',go:'duvidas'}
+];
+(function(){
+  const max=Math.max(...TOPICS.map(t=>t.c));
+  $('#bars').innerHTML=TOPICS.map(t=>`<button class="bar" data-go="${t.go}"><span class="lab"><b>${esc(t.n)}</b><small>${esc(t.d)}</small></span><span class="track"><span class="fill" style="display:block;width:${Math.round(t.c/max*100)}%"></span></span><span class="n">${t.c}</span></button>`).join('');
+})();
+
+/* ---------- Calculadora ---------- */
+const num=id=>{const v=parseFloat(String($('#'+id).value).replace(',','.'));return isFinite(v)&&v>=0?v:0};
+const fmt=(n,d=1)=>n.toLocaleString('pt-BR',{maximumFractionDigits:d});
+let lastSummary='';
+function calc(){
+  const imp=num('imp'),cl=num('cli'),ve=num('ven');
+  const gRaw=$('#gmv').value.trim(); const gmv=gRaw===''?null:num('gmv');
+  const V=$('#verdict'); let cls='n',title,body,key='';
+  const cpm=imp>0?cl/imp*1000:null, cpv=ve>0?cl/ve:null, ipv=ve>0?imp/ve:null;
+  $('#t-cpm').textContent=cpm==null?'—':fmt(cpm);
+  $('#s-cpm').textContent=cpm==null?'':(cpm>=20?'acima do mínimo de 20':'abaixo do mínimo de 20');
+  $('#t-cpv').textContent=cpv==null?'—':fmt(cpv);
+  $('#t-ipv').textContent=ipv==null?'—':fmt(ipv,0);
+  let level='';
+  if(cpv==null){ $('#s-cpv').textContent=ve===0&&cl>0?'sem vendas pagas':''; }
+  else if(cpv<=20){level='Ótima';cls='g'}
+  else if(cpv<=40){level='Média';cls='a'}
+  else if(cpv<57){level='Zona de transição';cls='a'}
+  else {level='Ruim';cls='r'}
+  $('#s-cpv').textContent=level;
+  let st='—',ss='informe o GMV';
+  if(gmv!=null){ if(gmv<=1000){st='★★';ss='2 estrelas'} else if(gmv<=10000){st='★★ a ★★★';ss='entre 2 e 3 estrelas'} else if(gmv<=80000){st='★★★';ss='3 estrelas'} else {st='★★★★';ss='4 estrelas'} }
+  $('#t-star').textContent=st; $('#s-star').textContent=ss;
+  const ptr=$('#ptr');
+  if(cpv!=null){ptr.hidden=false;ptr.style.left=Math.min(cpv,80)/80*100+'%'} else ptr.hidden=true;
+
+  if(imp<=0){title='Preencha as impressões';body='Informe impressões, cliques e vendas pagas dos últimos 7 dias.';}
+  else if(ve===0){title='Sem vendas pagas na janela';body='A aula aponta ruptura de estoque e cópia do produto por outros vendedores como causas comuns. Confira também se há pedidos inelegíveis e se a conta é antiga ou recebeu tráfego casual.';}
+  else if(cls==='g'){title='Conta ótima';body='Produza 15 a 20 vídeos por dia, busque produtos parecidos com comissão maior e rotacione um produto campeão por dia em contas de contingência.';}
+  else if(cls==='a'&&level==='Média'){title='Conta na média';body='Mantenha o formato base e suba o volume: de 3 para 5 ou mais vídeos por dia.';}
+  else if(level==='Zona de transição'){title='Entre a média e o ruim';body='A aula não define plano para esta faixa. Comece pelo plano da média (mais volume) e reavalie em 7 dias.';}
+  else {title='Conta ruim';body='Mantenha formato base, corpo e chamada para ação. Troque só o gancho dos 5 primeiros segundos e teste ao menos 3 produtos novos.';}
+  if(imp>0){ key=cpm<20?'CTR abaixo de 20 cliques por 1.000 impressões: a aula indica problema de formato ou conta flopada.':'CTR dentro do mínimo de 20 cliques por 1.000 impressões.'; }
+  V.className='verdict '+(imp>0&&ve>0?cls:'n');
+  V.innerHTML=`<b>${esc(title)}</b><p>${esc(body)}</p><p class="key">${esc(key)}</p>`;
+  lastSummary=imp>0?`Conta analisada (7 dias): ${fmt(imp,0)} impressões, ${fmt(cl,0)} cliques, ${fmt(ve,0)} vendas pagas.\nCliques por 1.000 impressões: ${fmt(cpm)}. Cliques por venda: ${cpv==null?'sem vendas':fmt(cpv)}.\nClassificação: ${ve===0?'sem vendas pagas':title}. ${key}`:'';
+}
+['imp','cli','ven','gmv'].forEach(id=>$('#'+id).addEventListener('input',calc));
+$('#presets').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(!b) return;
+  const [i,c,v,g]=b.dataset.p.split(',');
+  $('#imp').value=i;$('#cli').value=c;$('#ven').value=v;$('#gmv').value=g;
+  $$('#presets .chip').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  calc();
+});
+$('#copy').addEventListener('click',async()=>{
+  const out=$('#copied'),ta=$('#cp');
+  if(!lastSummary){out.textContent='Preencha os números primeiro.';return}
+  try{await navigator.clipboard.writeText(lastSummary);ta.hidden=true;out.textContent='Resumo copiado.'}
+  catch(e){ta.hidden=false;ta.value=lastSummary;ta.focus();ta.select();out.textContent='Copie o texto abaixo.'}
+  setTimeout(()=>{out.textContent=''},4000);
+});
+calc();
+
+/* ---------- Dúvidas ---------- */
+const FAQ=[
+ {t:'Métricas',q:'Quantas visualizações preciso para fazer uma venda?',a:'Essa é a pergunta central da auditoria. A média ideal de referência é <b>1.000 impressões, 20 cliques no produto e 1 venda</b>. Aumentar visualizações eleva a chance de venda, mas mais visualizações nem sempre significam mais vendas.'},
+ {t:'Métricas',q:'Qual é o mínimo de cliques para a conta estar saudável?',a:'Pelo menos <b>20 cliques a cada 1.000 impressões</b>, como a participante Larissa também apontou. Valores menores indicam problema de formato ou conta flopada.'},
+ {t:'Métricas',q:'Qual período devo analisar?',a:'Sempre <b>7 dias</b>. O Higor confirmou a janela quando a Renata perguntou e a repetiu ao revisar as faixas de eficiência.'},
+ {t:'Métricas',q:'Em que ordem procuro o gargalo?',a:'Alcance, impressões do produto, cliques, compras e GMV. Resolva o elo mais cedo da fila antes de olhar os seguintes.'},
+ {t:'Métricas',q:'Quais pedidos entram na conta?',a:'Só <b>pedidos pagos</b>. Pedidos inelegíveis, gerados por erros de produtores, distorcem as estatísticas.'},
+ {t:'Métricas',q:'O número de cliques vale igual para todo produto?',a:'Não. Pergunta do Vinícius. A conversão varia: produto exclusivo se comporta diferente de roupa vendida por vários lojistas, com estoques e confiabilidades distintos.'},
+ {t:'Métricas',q:'Tive 15 mil visualizações, 271 cliques e só 4 vendas. O que houve?',a:'Caso de perfume árabe. O problema costuma estar em <b>ruptura de estoque</b> ou em <b>cópia do produto por outros vendedores</b>.'},
+ {t:'Métricas',q:'Quantos vídeos preciso postar para ampliar as impressões?',a:'Entre <b>5 e 10 vídeos</b> ajudam a ampliar impressões e obrigam o algoritmo a entregar o conteúdo (pergunta do Kauan). Perfis com poucos vídeos e muitas vendas são exceções estatísticas e não invalidam a média.'},
+ {t:'Métricas',q:'O que são os múltiplos de 100 e 1.000?',a:'Segundo o Higor, o TikTok opera em múltiplos de 100 e 1.000 visualizações por causa da estrutura binária do código, e o alcance se estabiliza nesses patamares.'},
+ {t:'Contas',q:'A quantidade de seguidores influencia o alcance?',a:'Não. Higor e Gustavo afirmaram que seguidor é um mito e não afeta alcance nem impressões. Isso responde à dúvida sobre ativar o TikTok Shop com 80 seguidores e CNPJ.'},
+ {t:'Contas',q:'Vale comprar conta pronta ou usar farmácia de contas?',a:'Nem todas as farmácias entregam bons resultados. O tema de <b>comprar ou farmar contas</b> será tratado em uma sessão futura.'},
+ {t:'Contas',q:'Como identificar e tratar uma conta flopada?',a:'O problema costuma vir de histórico de violações no mesmo dispositivo. A recomendação foi usar conexão 4G e modo avião para reiniciar o identificador de hardware.'},
+ {t:'Contas',q:'Posso excluir vídeos antigos ao mudar de formato?',a:'<b>Nunca.</b> O algoritmo penaliza a exclusão. Para tirar o vídeo de circulação, coloque-o no modo privado.'},
+ {t:'Contas',q:'Levei uma punição de 15 dias. O que faço?',a:'Contate a central de ajuda do TikTok e peça o motivo específico, apele formalmente e revise palavras restritas nas legendas antes de mudar o formato de forma drástica (caso da Gabriela).'},
+ {t:'Contas',q:'Quantas contas devo manter?',a:'Para quem tem contas antigas, o Higor sugeriu aproveitá-las e manter no mínimo 3 ativas (caso do Irio). Para quem opera 4 contas no mesmo nicho, sugeriu reduzir para 2 e testar outro nicho (caso do Vitor).'},
+ {t:'Formato',q:'Posso testar vários formatos ao mesmo tempo?',a:'Não é recomendado. Testes desordenados não geram bons resultados e as maiores contas não testam vários formatos juntos. A consistência é o nome do jogo.'},
+ {t:'Formato',q:'Quanto tempo leva para saber se um formato funcionou?',a:'Para a Elaine, o Higor sugeriu um período conservador de <b>3 meses</b>. Para produtos, janelas de <b>30 a 90 dias</b> antes de descartar.'},
+ {t:'Formato',q:'Vídeos com voz são piores?',a:'Aumentam a chance de violações relacionadas a texto. Pese isso contra a agilidade e a capacidade de manter o volume de postagens.'},
+ {t:'Formato',q:'Posso usar vídeos com movimento de terceiros?',a:'Não é adequado: há cópia de movimentos e perda de identidade do perfil (pergunta do Gustavo).'},
+ {t:'Formato',q:'Para que servem as legendas?',a:'Funcionam como uma segunda hashtag voltada à segmentação de público, não como solução de problemas.'},
+ {t:'Formato',q:'O que significa "produto agro" nos formatos showcase e POV?',a:'A categoria engloba vários itens. No <b>showcase</b> (manequim ou cabide) foque só na parte superior do vestuário. No <b>POV</b> (experiência tátil) dá para testar calças e itens relacionados.'},
+ {t:'Formato',q:'Como analisar um formato híbrido?',a:'Olhe a quantidade de produtos testados, o volume diário de vídeos, impressões e cliques, e não só o formato. Sugestão para o dennys: 2 de 8 vídeos diários, por 15 dias.'},
+ {t:'Produtos',q:'Como achar produtos com mais potencial?',a:'Use o Calodata para ver pedidos em alta, taxa de cliques e adições ao carrinho. Procure lojas de alto faturamento (100 a 200 mil por mês) e combine com o ChatGPT para achar itens parecidos.'},
+ {t:'Produtos',q:'O fornecedor tirou meu produto do programa de afiliados. E agora?',a:'Caso da Maraína. O Higor a tranquilizou: mantenha o nicho de casa e cozinha, busque lojas de alto faturamento no Calodata e use multiplicadores de vídeo.'},
+ {t:'Produtos',q:'Vale o nicho de entretenimento?',a:'Pode atrair visualizações sem conversão em vendas por causa da segmentação do algoritmo (alerta feito ao Irio).'},
+ {t:'Ferramentas',q:'Multiplicador de vídeo pode gerar bloqueios?',a:'O Vitor temia restrições. Higor e Gustavo defenderam o workflow com o Domínio Creator, citando 27 vídeos em 5 minutos, e liberaram a ferramenta à turma. O resumo não detalha garantias contra bloqueio.'},
+ {t:'Ferramentas',q:'Qual ferramenta de automação e notificação usar?',a:'O Higor está testando novas opções antes de recomendar. Também vai avaliar uma nova ferramenta de edição como alternativa ao Magnific.'},
+ {t:'Ferramentas',q:'O Domínio Farm funciona fora do Brasil?',a:'A ferramenta atua no Brasil. Categorias de militar, médico e bombeiro funcionam bem no exterior (pergunta do Nuno).'},
+ {t:'Mercado',q:'O período de eleições e o fim do ano atrapalham?',a:'Gustavo apontou que eleições e datas como Black Friday (11/11) e Natal geram instabilidade no algoritmo. Ao mesmo tempo, novembro e dezembro são meses muito lucrativos por causa das festividades e do décimo terceiro.'}
+];
+const FTAGS=['Todos',...new Set(FAQ.map(f=>f.t))];
+let fTag='Todos',fQ='';
+function renderFaq(){
+  const q=fQ.trim().toLowerCase();
+  const items=FAQ.filter(f=>(fTag==='Todos'||f.t===fTag)&&(!q||(f.q+' '+f.a).toLowerCase().includes(q)));
+  $('#qcount').textContent=items.length+(items.length===1?' pergunta':' perguntas');
+  $('#qlist').innerHTML=items.length?items.map(f=>`<details class="qa"><summary>${esc(f.q)}</summary><div class="ans"><p>${f.a}</p><div class="meta"><span class="tg">${esc(f.t)}</span></div></div></details>`).join(''):'<p class="lead">Nenhuma pergunta encontrada. Tente outra palavra ou outro tema.</p>';
+  $('#toggle-all').textContent='Expandir tudo';
+}
+$('#qf').innerHTML=FTAGS.map((t,i)=>`<button class="chip" data-t="${esc(t)}" aria-pressed="${i===0}">${esc(t)}</button>`).join('');
+$('#qf').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;fTag=b.dataset.t;$$('#qf .chip').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderFaq()});
+$('#q').addEventListener('input',e=>{fQ=e.target.value;renderFaq()});
+$('#toggle-all').addEventListener('click',e=>{
+  const ds=$$('#qlist details'); const open=ds.some(d=>!d.open);
+  ds.forEach(d=>d.open=open); e.target.textContent=open?'Recolher tudo':'Expandir tudo';
+});
+renderFaq();
+
+/* ---------- Casos ---------- */
+const CASES=[
+ {n:'Fernando Sonoda',t:['Formato','Produto'],s:'Roupas infantis no nicho evangélico. Frases de bênção geram muito engajamento, mas poucas vendas.',r:'Gancho focado no produto nos primeiros 5 segundos, frase de entretenimento depois, e uma setinha apontando o botão de compra.'},
+ {n:'Gabriela Santos',t:['Conta'],s:'Restrição de 15 dias após viralizar kits de blusa tapa-bumbum com modelo segurando cabide.',r:'Pedir à central de ajuda o motivo específico, revisar palavras restritas nas legendas e apelar antes de trocar o formato.'},
+ {n:'dennys enhik',t:['Formato'],s:'Moda feminina. Migrou de POV para UGC e manteve bom desempenho em alguns itens antigos.',r:'Formato híbrido em 2 dos 8 vídeos diários por 15 dias. Legenda é segunda hashtag de segmentação.'},
+ {n:'Irio Freitas',t:['Nicho','Conta'],s:'Contas antigas (uma de fazendeiro com mais de 1 ano e 210 no Serasa do TikTok), conteúdo sem foco, vendas só em lives.',r:'Aproveitar as contas: agro com cristão na de fazendeiro, perfume árabe nas outras, mínimo de 3 contas. Cuidado com entretenimento.'},
+ {n:'Renata Gonzaga',t:['Produto'],s:'Conta de 2 meses. Só um jogo americano de baixa comissão vende (cerca de R$ 100 por semana).',r:'Calodata e ChatGPT para achar itens parecidos em lojas de 100 a 200 mil por mês, ou migrar para agro ou perfume árabe.'},
+ {n:'Maraína',t:['Produto','Volume'],s:'Lingerie viralizou em agosto. Queda forte após fornecedores removerem multiprocessador e panela elétrica.',r:'Manter casa e cozinha, usar multiplicadores de vídeo e lojas de alto faturamento. Estudar POV talking, showcase e Calodata; achar 4 perfis semelhantes.'},
+ {n:'Márcio Afonso',t:['Nicho'],s:'Conta plus size sem rosto ganha 1.000 seguidores por dia mas vende pouco. Conta agro: 107 mil impressões, 5.400 cliques, 83 vendas.',r:'Plus size para agro e cristão, evitando nichos sensíveis. Seguir validando o formato na conta que funciona.'},
+ {n:'Zaya Lolo',t:['Produto','Formato'],s:'Duas contas de 2 meses: 384 cliques e 14 vendas; 724 cliques e 8 vendas. Formato sem rosto para público masculino.',r:'Manter o formato, rotacionar ao menos 3 produtos e evitar mudanças que atrapalhem o aprendizado do algoritmo.'},
+ {n:'Vitor Culti',t:['Nicho','Volume'],s:'4 perfis no mesmo segmento, sem rosto com narração própria, cerca de 5 vídeos por perfil, R$ 700 a 800 por dia no total.',r:'Reduzir para 2 contas, testar perfume árabe, comparar impressões, cliques e vendas e usar o multiplicador.'},
+ {n:'Vinicius Rafael',t:['Produto','Nicho'],s:'Conta só do chinelo da Melzinha chegou ao nível 4. Outra, de moda feminina, caiu após virar no face.',r:'Manter o produto, pesquisar perfis concorrentes ranqueados e aumentar a produção. Seguir em moda feminina pelo potencial de escala.'},
+ {n:'Marco Aurélio',t:['Formato','Volume'],s:'Três contas (UGC com fala, UGC sem fala, casa e cama) e mistura de blusas, calças, vestidos e tops.',r:'Passar a conta falada para POV com experiência tátil, mantendo a fala validada, produzir por ciclos de tipo de peça e fazer 100 vídeos em 15 dias.'},
+ {n:'Elaine Santos',t:['Volume','Formato'],s:'Três contas de 3 a 4 meses, desorganizadas, abaixo de 2 mil de GMV por mês por excesso de testes.',r:'Consistência por 15 a 20 dias e cerca de 100 vídeos, em nichos de alto fluxo financeiro, com mais de 10 vídeos por dia.'},
+ {n:'Tamiria',t:['Formato'],s:'Conta antiga de conteúdo motivacional convertida para calçados, com uma venda até agora.',r:'Não insistir no formato atual se há poucos resultados. Mudar para um formato de maior volume e melhor vitrine.'},
+ {n:'Stefanny Santos',t:['Formato'],s:'Vende botas, camisas de pesca e bonés em POV sem fala com música. Pergunta como criar ganchos.',r:'Testar ganchos de tendências atuais, como drone e fábrica, mantendo os vídeos que já performam.'},
+ {n:'Nuno Xavier',t:['Conta','Formato'],s:'Dúvida sobre o Domínio Farm, exclusão de vídeos antigos e análise de formato híbrido.',r:'Não excluir vídeos (usar privado) e olhar produtos testados, volume diário, impressões e cliques.'}
+];
+const CTAGS=['Todos',...new Set(CASES.flatMap(c=>c.t))];
+let cTag='Todos';
+function renderCases(){
+  const items=CASES.filter(c=>cTag==='Todos'||c.t.includes(cTag));
+  $('#ccount').textContent=items.length+(items.length===1?' caso':' casos');
+  $('#clist').innerHTML=items.map(c=>`<div class="box case"><h3>${esc(c.n)}</h3><div class="meta" style="display:flex;gap:8px;flex-wrap:wrap">${c.t.map(x=>`<span class="tg">${esc(x)}</span>`).join('')}</div><p class="acao"><b>Situação.</b> ${esc(c.s)}</p><p class="acao"><b>Recomendação.</b> ${esc(c.r)}</p></div>`).join('');
+}
+$('#cf').innerHTML=CTAGS.map((t,i)=>`<button class="chip" data-t="${esc(t)}" aria-pressed="${i===0}">${esc(t)}</button>`).join('');
+$('#cf').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;cTag=b.dataset.t;$$('#cf .chip').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderCases()});
+renderCases();
+
+/* ---------- Checklist ---------- */
+const MINE=[
+ 'Separe 7 dias de dados de uma conta: impressões do produto, cliques e pedidos pagos.',
+ 'Calcule cliques por 1.000 impressões e cliques por venda.',
+ 'Classifique a conta como ótima, média ou ruim e anote as estrelas pelo GMV.',
+ 'Conta ruim: mantenha formato, corpo e chamada para ação e troque só o gancho dos 5 primeiros segundos.',
+ 'Conta ruim: teste ao menos 3 produtos novos.',
+ 'Conta média: suba de 3 para 5 ou mais vídeos por dia.',
+ 'Conta ótima: 15 a 20 vídeos por dia, produtos parecidos com comissão maior e 1 produto campeão por dia.',
+ 'Fique no mesmo formato por 15 a 20 dias, com cerca de 100 vídeos, antes de mudar.',
+ 'Coloque vídeos antigos no modo privado em vez de excluir.',
+ 'Pesquise no Calodata itens que faturem mais de 100 mil por mês e ache 4 perfis parecidos para comparar.',
+ 'Reavalie em 7 dias. Julgue o formato só depois de 3 meses e produtos novos entre 30 e 90 dias.'
+];
+let done={};
+try{done=JSON.parse(localStorage.getItem('ms-ck')||'{}')||{}}catch(e){done={}}
+function saveDone(){try{localStorage.setItem('ms-ck',JSON.stringify(done))}catch(e){}}
+function renderMine(){
+  $('#mine').innerHTML=MINE.map((t,i)=>`<label class="ck"><input type="checkbox" data-i="${i}" ${done[i]?'checked':''}><span>${esc(t)}</span></label>`).join('');
+  prog();
+}
+function prog(){
+  const n=MINE.filter((_,i)=>done[i]).length;
+  $('#pbar').style.width=(n/MINE.length*100)+'%';
+  $('#ptxt').textContent=n+' de '+MINE.length+' feitos';
+}
+$('#mine').addEventListener('change',e=>{const c=e.target.closest('input');if(!c)return;done[c.dataset.i]=c.checked;saveDone();prog()});
+$('#reset').addEventListener('click',()=>{done={};saveDone();renderMine()});
+renderMine();
+
+const PPL=[
+ {n:'Higor Machado',l:['Transformar o documento de análise em calculadora e enviar a todos os participantes.','Tratar comprar ou farmar contas em sessão futura.','Liberar a aula Lista Negra após a mentoria.','Finalizar a atualização dos artefatos e dar acesso.','Testar a nova ferramenta de edição como alternativa ao Magnific.','Apresentar o formato fábrica até o fim da semana.']},
+ {n:'O grupo',l:['Contas abaixo da média: trocar o gancho mantendo corpo e chamada para ação.','Contas médias ou ótimas: aumentar o volume diário de vídeos.','Substituir produtos fracos por similares com comissão melhor.','Contas com métricas ideais: rotacionar um produto campeão por dia.']},
+ {n:'Fernando Sonoda',l:['Headline focada no produto nos primeiros 5 segundos, antes da frase religiosa.','Adicionar uma seta de chamada para ação no fim dos vídeos.']},
+ {n:'Gabriela Santos',l:['Pedir ao suporte do TikTok a justificativa específica da punição de 15 dias.']},
+ {n:'dennys enhik',l:['Formato híbrido em 2 dos 8 vídeos diários por 15 dias.']},
+ {n:'Irio Freitas',l:['Focar as contas atuais em agro, cristão ou perfume árabe, com a consistência de volume recomendada.']},
+ {n:'Renata Gonzaga',l:['Buscar no Calodata itens que faturem mais de 100 mil por mês.','Achar lojas com itens comparáveis ao jogo americano e margem melhor.']},
+ {n:'Maraína',l:['Assistir os módulos de POV talking e showcase.','Achar 4 perfis semelhantes para benchmarking.','Estudar o módulo de Calodata.','Compartilhar progresso e resultados até o fim do mês.']},
+ {n:'Márcio Afonso',l:['Enviar print de cliques e impressões ao Gustavo Stofel.','Migrar o foco para cristão e agro.','Identificar na primeira conta os itens com mais vendas.']},
+ {n:'Zaya Lolo',l:['Rotacionar produtos mantendo o formato para o público masculino.']},
+ {n:'Vitor Culti',l:['Concentrar em 2 contas e intercalar novos produtos e nichos.']},
+ {n:'Vinicius Rafael',l:['Pesquisar lojas parecidas para achar novos itens e aumentar a produção.']},
+ {n:'Marco Aurélio',l:['Produzir 100 vídeos em 15 dias no formato POV segurando o produto, com a narração validada.']}
+];
+$('#ppl').innerHTML=PPL.map((p,i)=>`<details class="ad" ${i<2?'open':''}><summary>${esc(p.n)}</summary><ul class="rules">${p.l.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`).join('');
+$('#toggle-ppl').addEventListener('click',e=>{
+  const ds=$$('#ppl details'); const open=ds.some(d=>!d.open);
+  ds.forEach(d=>d.open=open); e.target.textContent=open?'Recolher tudo':'Expandir tudo';
+});
+
+/* ---------- Início ---------- */
+(function(){
+  let id=location.hash.slice(1);
+  if(!TABS.includes(id)){try{id=localStorage.getItem('ms-tab')||'mapa'}catch(e){id='mapa'}}
+  show(id,false);
+})();
+</script>
+
+<a href="/" id="dm-back" style="position:fixed;top:12px;left:12px;z-index:99999;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:rgba(10,10,11,.82);color:#ffb020;border:1px solid rgba(255,176,32,.35);font:600 12px/1 'DM Sans',system-ui,sans-serif;text-decoration:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">&larr; Painel Dominion</a></body></html>
