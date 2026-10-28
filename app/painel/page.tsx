@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { exigirMentorado } from "@/lib/acesso";
 import { sair } from "../login/actions";
-import { FLOW_URL, GRUPOS, ICONES, REGRAS, REGULAMENTO_RACE, TOTAL_FERRAMENTAS, WHATSAPP } from "@/lib/conteudo";
+import { FLOW_URL, GRUPOS, ICONES, REGRAS, REGULAMENTO_RACE, TOTAL_FERRAMENTAS } from "@/lib/conteudo";
 
 export const metadata = { title: "Painel | Dominion Mentory", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -180,7 +180,6 @@ export default async function Painel() {
       <footer>
         <img src="/img/logo.png" alt="Dominion Mentory" />
         <p className="tagline">DOMINION — Aprenda, execute e evolua.</p>
-        <a className="btn" href={WHATSAPP} target="_blank" rel="noopener">Grupo da mentoria</a>
       </footer>
     </>
   );
