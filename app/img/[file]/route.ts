@@ -24,7 +24,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ file: stri
   try {
     const dados = await readFile(path.join(process.cwd(), "private", "img", file));
     return new Response(new Uint8Array(dados), {
-      headers: { "Content-Type": tipo, "Cache-Control": "private, max-age=3600", "X-Robots-Tag": "noindex" },
+      headers: { "Content-Type": tipo, "Cache-Control": "private, max-age=86400", "X-Robots-Tag": "noindex" },
     });
   } catch {
     return new Response("Não encontrado", { status: 404 });

@@ -1,10 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { caminhoSeguro, registrarAcesso } from "@/lib/acesso";
+import { assinar, COOKIE_OK, OPCOES_COOKIE } from "@/lib/sessao";
 
 export type Estado = { erro?: string; email?: string; detalhe?: string };
 
@@ -23,10 +25,12 @@ export async function entrar(_antes: Estado, form: FormData): Promise<Estado> {
 
   // 1) Está na lista e ativo?
   let ativo: boolean | null = null;
+  let nome: string | null = null;
   try {
-    const { data, error } = await admin.from("mentorados").select("ativo").eq("email", email).maybeSingle();
+    const { data, error } = await admin.from("mentorados").select("ativo, nome").eq("email", email).maybeSingle();
     if (error) throw error;
     ativo = data ? data.ativo : null;
+    nome = data ? data.nome : null;
   } catch {
     return { email, erro: "Não foi possível verificar o acesso agora. Tente de novo em instantes." };
   }
@@ -73,11 +77,15 @@ export async function entrar(_antes: Estado, form: FormData): Promise<Estado> {
   await admin.from("mentorados").update({ ultimo_acesso: new Date().toISOString() }).eq("email", email);
   await registrarAcesso(email, "login");
 
+  // Já deixa o acesso conferido: as próximas páginas não precisam consultar o Supabase.
+  (await cookies()).set(COOKIE_OK, await assinar({ email, nome }), OPCOES_COOKIE);
+
   redirect(destino);
 }
 
 export async function sair() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  (await cookies()).delete(COOKIE_OK);
   redirect("/");
 }

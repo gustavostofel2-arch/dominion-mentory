@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { after } from "next/server";
 import { getMentorado, registrarAcesso } from "@/lib/acesso";
 
 export const runtime = "nodejs";
@@ -23,7 +24,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ file: stri
 
   try {
     const dados = await readFile(path.join(process.cwd(), "private", "workflows", file));
-    void registrarAcesso(m.email, "workflow", file);
+    after(() => registrarAcesso(m.email, "workflow", file));
     const nome = NOMES[file] ?? file;
     return new Response(new Uint8Array(dados), {
       headers: {

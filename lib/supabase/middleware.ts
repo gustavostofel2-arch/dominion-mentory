@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Renova a sessão a cada requisição e devolve se há alguém logado. */
+/** Renova a sessão do Supabase. Devolve o cliente, a resposta e quem está logado. */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -26,5 +26,5 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  return { response, user };
+  return { supabase, response, user };
 }

@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { after } from "next/server";
 import { getMentorado, registrarAcesso } from "@/lib/acesso";
 
 export const runtime = "nodejs";
@@ -32,6 +33,6 @@ export async function GET(request: Request, ctx: { params: Promise<{ slug: strin
   const i = html.indexOf('id="dm-bar"');
   if (i >= 0) html = html.slice(0, i) + html.slice(i).replace('<a href="/"', '<a href="/painel"');
 
-  void registrarAcesso(m.email, "ferramenta", slug);
+  after(() => registrarAcesso(m.email, "ferramenta", slug));
   return new Response(html, { headers: CABECALHOS });
 }

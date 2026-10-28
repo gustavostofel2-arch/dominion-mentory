@@ -10,7 +10,7 @@ Site da Dominion Mentory em Next.js, com login só pelo e-mail da compra para os
 1. A pessoa digita o e-mail da compra em `/login`.
 2. O servidor confere se o e-mail está na tabela `mentorados` com `ativo = true`. Se não estiver, não entra.
 3. Estando liberado, o servidor cria a sessão na hora. **Não envia e-mail, código nem link.**
-4. **A cada acesso** a uma página ou arquivo restrito o servidor confere de novo se a pessoa continua ativa. Desativar um mentorado corta o acesso na hora, mesmo para quem já está logado.
+4. O servidor guarda um cookie assinado (`dm_ok`) dizendo que o e-mail foi conferido, e **só consulta o Supabase de novo a cada 5 minutos**. Isso deixa as páginas e as imagens rápidas. Desativar um mentorado corta o acesso em até 5 minutos, mesmo para quem já está logado. (O tempo muda com a variável opcional `SESSAO_TTL_S`, em segundos.)
 
 Os arquivos das ferramentas ficam em `private/` (fora de `public/`) e só saem pelo servidor depois da checagem. Não existe URL pública que entregue esses arquivos.
 

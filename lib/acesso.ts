@@ -1,25 +1,17 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { COOKIE_OK, verificar } from "@/lib/sessao";
 
 export type Mentorado = { email: string; nome: string | null };
 
-/** Retorna o mentorado logado E ativo, ou null. Checa a lista a cada chamada. */
+/**
+ * Quem está logado e ativo, ou null. Lê o cookie assinado (sem rede): o middleware
+ * é quem confere o Supabase e a lista de mentorados e renova esse cookie.
+ */
 export async function getMentorado(): Promise<Mentorado | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email) return null;
-
-  const { data } = await supabase
-    .from("mentorados")
-    .select("email, nome, ativo")
-    .eq("email", user.email.toLowerCase())
-    .maybeSingle();
-
-  if (!data || !data.ativo) return null;
-  return { email: data.email, nome: data.nome };
+  const store = await cookies();
+  return verificar(store.get(COOKIE_OK)?.value);
 }
 
 /** Para páginas: manda para o login se não puder entrar. */
