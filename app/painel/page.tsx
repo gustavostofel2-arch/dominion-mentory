@@ -2,7 +2,7 @@ import Link from "next/link";
 import { NomeTopo, Saudacao } from "../_components/Nome";
 import { sair } from "../login/actions";
 import RaceCompleta from "../_components/RaceCompleta";
-import { FLOW_URL, GRUPOS, ICONES, REGRAS, TOTAL_FERRAMENTAS } from "@/lib/conteudo";
+import { FLOW_URL, GRUPOS, ICONES, MAPA_ESTUDOS_URL, REGRAS, TOTAL_FERRAMENTAS, TURBO_FLOW_URL } from "@/lib/conteudo";
 
 export const metadata = { title: "Painel | Dominion Mentory", robots: { index: false } };
 
@@ -57,18 +57,18 @@ export default function Painel() {
               <span className="eyebrow">Ferramentas</span>
               <h2>Escolha o sistema e abra</h2>
               <p>
-                Cada ferramenta abre em uma página própria. Dentro dela, o botão <b>Painel Dominion</b> traz você de volta aqui.
+                Cada ferramenta abre em uma nova aba. Para voltar, é só fechar a aba e você continua aqui no painel.
               </p>
             </div>
 
-            <Link className="start" href="/ferramentas/mapa-de-estudos">
+            <a className="start" href={MAPA_ESTUDOS_URL} target="_blank" rel="noopener noreferrer">
               <div style={{ position: "relative", zIndex: 1 }}>
                 <span className="chip aula">Comece aqui</span>
                 <h3>Mapa de Estudos</h3>
                 <p>Por onde eu começo? Todo mundo parte do mesmo ponto e a rota muda conforme o seu nível.</p>
               </div>
               <span className="btn primary go">Abrir o mapa</span>
-            </Link>
+            </a>
 
             <div style={{ marginTop: 34 }}>
               {GRUPOS.map((g) => (
@@ -76,7 +76,7 @@ export default function Painel() {
                   <h3>{g.titulo}</h3>
                   <div className="grid">
                     {g.itens.map((it) => (
-                      <a className="tool" href={`/ferramentas/${it.slug}`} key={it.slug}>
+                      <a className="tool" href={it.url} target="_blank" rel="noopener noreferrer" key={it.url}>
                         <span className="ic"><Icone nome={it.icone} /></span>
                         <h4>{it.nome}</h4>
                         <p>{it.texto}</p>
@@ -111,6 +111,9 @@ export default function Painel() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M7 17 17 7M8 7h9v9" />
                   </svg>
+                </a>
+                <a className="btn" href={TURBO_FLOW_URL} target="_blank" rel="noopener">
+                  Modo de uso do Flow Turbo
                 </a>
               </div>
             </div>

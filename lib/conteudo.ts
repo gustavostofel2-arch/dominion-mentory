@@ -2,8 +2,10 @@ export const WHATSAPP =
   "https://chat.whatsapp.com/IbydfIQ5SPl7SYL7EankCv?s=cl&p=i&mlu=4&ilr=4&iam=2";
 export const TIKTOK = "https://www.tiktok.com/@higor.prompt?_r=1&_t=ZS-9AuzUVuy2Dc";
 export const FLOW_URL = "https://dominion-flow.app/login";
+export const TURBO_FLOW_URL = "https://modo-de-uso-turbo-flow.vercel.app/";
+export const MAPA_ESTUDOS_URL = "https://claude.ai/artifact/VahhJ4w4XDkwbkMTM9QL2Z";
 
-export type Ferramenta = { slug: string; nome: string; texto: string; icone: string; tag: string };
+export type Ferramenta = { url: string; nome: string; texto: string; icone: string; tag: string };
 export type Grupo = { titulo: string; classe: "op" | "calc" | "ia" | "aula"; itens: Ferramenta[] };
 
 export const GRUPOS: Grupo[] = [
@@ -12,7 +14,7 @@ export const GRUPOS: Grupo[] = [
     classe: "op",
     itens: [
       {
-        slug: "operacao-multicontas",
+        url: "https://claude.ai/artifact/7xi6kPf9TvTH5fngLZyTu3",
         nome: "Operação Multicontas",
         texto:
           "Planeje a produção e monte o mapa de postagens dos 7 dias para todas as contas, com tudo em uma planilha.",
@@ -26,7 +28,7 @@ export const GRUPOS: Grupo[] = [
     classe: "aula",
     itens: [
       {
-        slug: "modelo-sal",
+        url: "https://claude.ai/artifact/L6q58zQvnQFDyHFq9MhnLk",
         nome: "Modelo SAL",
         texto:
           "Método exclusivo: Segmentar, Atingir e Lateralizar. Uma conta, um nicho, validar e escalar para os lados.",
@@ -34,12 +36,19 @@ export const GRUPOS: Grupo[] = [
         tag: "Método",
       },
       {
-        slug: "resumo-call-26-10",
-        nome: "Resumo da Call · 26/10/2026",
+        url: "https://resumos-calls.vercel.app/",
+        nome: "Resumo das Calls",
         texto:
-          "Análise de contas com o Higor: métricas, planos por faixa, dúvidas respondidas e checklist de ações.",
+          "Resumo de cada call com o Higor: métricas, planos por faixa, dúvidas respondidas e checklist de ações.",
         icone: "chart",
         tag: "Aula",
+      },
+      {
+        url: "https://claude.ai/artifact/PnGLHRZrXfvDB9JgUAKm5T",
+        nome: "Calendário Dominion",
+        texto: "Das primeiras calls até a virada de formato, com o que falar em cada marco e a Dominion Race.",
+        icone: "grid",
+        tag: "Calendário",
       },
     ],
   },
@@ -48,21 +57,21 @@ export const GRUPOS: Grupo[] = [
     classe: "calc",
     itens: [
       {
-        slug: "pontos-da-conta",
+        url: "https://claude.ai/artifact/D5RN8ocfLt6iM3TNQwkmQ8",
         nome: "Pontos da Conta",
         texto: "Como funciona a pontuação de cada conta de criador, os marcos e as restrições, sem susto.",
         icone: "gauge",
         tag: "Guia",
       },
       {
-        slug: "analise-de-conta",
+        url: "https://claude.ai/artifact/DXAJBD37R1NFCAva2je1uv",
         nome: "Análise de Conta",
         texto: "Média por 1.000 impressões: descubra se a conta está boa, média ou ruim com cliques por venda.",
         icone: "chart",
         tag: "Análise",
       },
       {
-        slug: "calculadora-de-retorno",
+        url: "https://claude.ai/artifact/S1J1XxZV2UwR3r88Kudr7M",
         nome: "Calculadora de Retorno",
         texto: "Em quanto tempo o TikTok Shop paga a sua operação: ponto de equilíbrio e meses para o investimento voltar.",
         icone: "calc",
@@ -75,28 +84,28 @@ export const GRUPOS: Grupo[] = [
     classe: "ia",
     itens: [
       {
-        slug: "pov-perfume-arabe",
+        url: "https://claude.ai/artifact/N6XbMZkK6MsBw1H13brqnz",
         nome: "POV Perfume Árabe",
         texto: "5 cenários prontos para gerar a imagem vertical 9:16 e depois animar em vídeo.",
         icone: "bag",
         tag: "Prompts",
       },
       {
-        slug: "pov-showcase-cabide",
+        url: "https://claude.ai/artifact/QGd3p9MLo2fiRMceoQ6zRR",
         nome: "POV Show Case · Cabide",
         texto: "Frame do produto mais um prompt de movimento para o gerador de vídeo.",
         icone: "hanger",
         tag: "Prompts",
       },
       {
-        slug: "ugc-try-on",
+        url: "https://claude.ai/artifact/QyPMB9tN5hUtCMsm23AZD9",
         nome: "UGC Try-On · Cenários Brasileiros",
         texto: "Imagens que parecem registros pessoais feitos em ambientes comuns. Versões A e B.",
         icone: "user",
         tag: "Prompts",
       },
       {
-        slug: "identidade-da-loja",
+        url: "https://claude.ai/artifact/CyJazGJz6cScDwbqRrT4YU",
         nome: "Identidade da Loja",
         texto: "Nome, logo e vitrine para a loja não ficar presa a um nicho só.",
         icone: "tag",
