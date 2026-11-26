@@ -10,7 +10,8 @@ export const COOKIE_NOME = "dm_nome";
 // Quanto tempo um acesso conferido vale. Desativar alguém passa a valer em até esse tempo.
 export const TTL_SEGUNDOS = Number(process.env.SESSAO_TTL_S ?? 300);
 
-export type SessaoOk = { email: string; nome: string | null };
+/** usuario: o @ da pessoa. null = ainda não criou. "-" = recurso de @ indisponível (não exigir). */
+export type SessaoOk = { email: string; nome: string | null; usuario?: string | null };
 
 const enc = new TextEncoder();
 
@@ -37,7 +38,7 @@ async function chave(): Promise<CryptoKey> {
 }
 
 export async function assinar(s: SessaoOk): Promise<string> {
-  const corpo = b64u(enc.encode(JSON.stringify({ e: s.email, n: s.nome, x: Date.now() + TTL_SEGUNDOS * 1000 })));
+  const corpo = b64u(enc.encode(JSON.stringify({ e: s.email, n: s.nome, u: s.usuario ?? null, x: Date.now() + TTL_SEGUNDOS * 1000 })));
   const sig = new Uint8Array(await crypto.subtle.sign("HMAC", await chave(), enc.encode(corpo)));
   return corpo + "." + b64u(sig);
 }
@@ -49,9 +50,9 @@ export async function verificar(valor: string | undefined | null): Promise<Sessa
   try {
     const ok = await crypto.subtle.verify("HMAC", await chave(), deb64u(sig), enc.encode(corpo));
     if (!ok) return null;
-    const dados = JSON.parse(new TextDecoder().decode(deb64u(corpo))) as { e: string; n: string | null; x: number };
+    const dados = JSON.parse(new TextDecoder().decode(deb64u(corpo))) as { e: string; n: string | null; u?: string | null; x: number };
     if (!dados.e || typeof dados.x !== "number" || dados.x < Date.now()) return null;
-    return { email: dados.e, nome: dados.n ?? null };
+    return { email: dados.e, nome: dados.n ?? null, usuario: dados.u ?? null };
   } catch {
     return null;
   }

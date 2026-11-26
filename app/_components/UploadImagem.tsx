@@ -1,40 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
-type Formato = "quadrada" | "retrato" | "banner";
-
-// Tamanhos finais (px). A imagem é recortada ao centro na proporção escolhida e comprimida.
-const ALVO: Record<Formato, { w: number; h: number; rotulo: string }> = {
-  quadrada: { w: 1080, h: 1080, rotulo: "Quadrada 1080×1080" },
-  retrato: { w: 1080, h: 1320, rotulo: "Retrato 1080×1320" },
-  banner: { w: 1600, h: 900, rotulo: "Banner 16:9" },
-};
-
-async function processar(arquivo: File, formato: Formato): Promise<File> {
-  const bmp = await createImageBitmap(arquivo);
-  const { w, h } = ALVO[formato];
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("sem canvas");
-  // "cover": preenche tudo e corta o excesso no centro
-  const escala = Math.max(w / bmp.width, h / bmp.height);
-  const sw = w / escala;
-  const sh = h / escala;
-  ctx.drawImage(bmp, (bmp.width - sw) / 2, (bmp.height - sh) / 2, sw, sh, 0, 0, w, h);
-  bmp.close();
-  let q = 0.85;
-  let blob: Blob | null = null;
-  while (q > 0.4) {
-    blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, "image/webp", q));
-    if (blob && blob.size <= 700_000) break;
-    q -= 0.1;
-  }
-  if (!blob) throw new Error("falha ao comprimir");
-  return new File([blob], "imagem.webp", { type: "image/webp" });
-}
+import { useCallback, useEffect, useRef, useState } from "react";
+import Cropper, { type Area } from "react-easy-crop";
+import { ALVO, carregar, recortar, type Formato } from "@/lib/recorte";
 
 export default function UploadImagem({
   atual,
@@ -46,40 +14,80 @@ export default function UploadImagem({
   formatoFixo?: Formato;
 }) {
   const [formato, setFormato] = useState<Formato>(formatoFixo ?? ((formatoAtual as Formato) || "quadrada"));
-  const [original, setOriginal] = useState<File | null>(null);
+  const [fonte, setFonte] = useState<string | null>(null); // imagem original escolhida
+  const [cortando, setCortando] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [giro, setGiro] = useState(0);
+  const [area, setArea] = useState<Area | null>(null);
   const [previa, setPrevia] = useState<string | null>(null);
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
-  const alvo = useRef<HTMLInputElement>(null);
+  const entrada = useRef<HTMLInputElement>(null);
+  const alvoFile = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!original) return;
-    let vivo = true;
-    setOcupado(true);
-    setErro("");
-    processar(original, formato)
-      .then((f) => {
-        if (!vivo || !alvo.current) return;
-        const dt = new DataTransfer();
-        dt.items.add(f);
-        alvo.current.files = dt.files;
-        setPrevia((antes) => {
-          if (antes) URL.revokeObjectURL(antes);
-          return URL.createObjectURL(f);
-        });
-      })
-      .catch(() => vivo && setErro("Não consegui ler essa imagem. Tente outra (JPG, PNG ou WebP)."))
-      .finally(() => vivo && setOcupado(false));
-    return () => {
-      vivo = false;
-    };
-  }, [original, formato]);
+  const alvo = ALVO[formato];
+
+  useEffect(
+    () => () => {
+      if (fonte) URL.revokeObjectURL(fonte);
+    },
+    [fonte],
+  );
 
   function escolher(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0] ?? null;
+    const f = e.target.files?.[0];
     if (!f) return;
-    if (!f.type.startsWith("image/")) return setErro("Escolha um arquivo de imagem.");
-    setOriginal(f);
+    setErro("");
+    if (!f.type.startsWith("image/") && !/\.(heic|heif|avif|bmp|gif|tiff?|svg)$/i.test(f.name)) {
+      setErro("Escolha um arquivo de imagem.");
+      return;
+    }
+    const url = URL.createObjectURL(f);
+    // confere se o navegador consegue abrir esse formato antes de mostrar o recorte
+    carregar(url)
+      .then(() => {
+        setFonte(url);
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+        setGiro(0);
+        setCortando(true);
+      })
+      .catch(() => {
+        URL.revokeObjectURL(url);
+        setErro("Este navegador não consegue abrir esse formato (comum com HEIC). Tire um print ou salve como JPG e tente de novo.");
+      });
+    e.target.value = "";
+  }
+
+  const aoCompletar = useCallback((_: Area, px: Area) => setArea(px), []);
+
+  async function aplicar() {
+    if (!fonte || !area || !alvoFile.current) return;
+    setOcupado(true);
+    setErro("");
+    try {
+      const arquivo = await recortar(fonte, area, giro, alvo);
+      const dt = new DataTransfer();
+      dt.items.add(arquivo);
+      alvoFile.current.files = dt.files;
+      setPrevia((antes) => {
+        if (antes) URL.revokeObjectURL(antes);
+        return URL.createObjectURL(arquivo);
+      });
+      setCortando(false);
+    } catch {
+      setErro("Não consegui recortar essa imagem. Tente outra.");
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  function remover() {
+    if (alvoFile.current) alvoFile.current.value = "";
+    setPrevia(null);
+    setFonte(null);
+    setCortando(false);
   }
 
   const mostrar = previa ?? atual ?? null;
@@ -90,7 +98,14 @@ export default function UploadImagem({
         {!formatoFixo && (
           <div className="fld">
             <label>Formato da imagem</label>
-            <select name="formato" value={formato} onChange={(e) => setFormato(e.target.value as Formato)}>
+            <select
+              name="formato"
+              value={formato}
+              onChange={(e) => {
+                setFormato(e.target.value as Formato);
+                if (fonte) setCortando(true); // a proporção mudou: enquadrar de novo
+              }}
+            >
               {(Object.keys(ALVO) as Formato[]).map((k) => (
                 <option key={k} value={k}>{ALVO[k].rotulo}</option>
               ))}
@@ -99,29 +114,76 @@ export default function UploadImagem({
         )}
         <div className="fld">
           <label>{formatoFixo ? "Banner 16:9 (opcional)" : "Imagem (opcional)"}</label>
-          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={escolher} />
-          {/* o arquivo já comprimido é colocado aqui para ir junto com o formulário */}
-          <input ref={alvo} type="file" name="imagem" hidden />
+          <input ref={entrada} type="file" accept="image/*" onChange={escolher} />
+          {/* o arquivo recortado fica aqui e vai junto com o formulário */}
+          <input ref={alvoFile} type="file" name="imagem" hidden />
         </div>
       </div>
-      {ocupado && <p className="dica">Preparando a imagem…</p>}
+
+      {cortando && fonte && (
+        <div className="crop-box" role="dialog" aria-label="Enquadrar imagem">
+          <div className="crop-area" style={{ aspectRatio: formato === "banner" ? "16 / 9" : "1 / 1" }}>
+            <Cropper
+              image={fonte}
+              crop={crop}
+              zoom={zoom}
+              rotation={giro}
+              aspect={alvo.w / alvo.h}
+              minZoom={0.5}
+              maxZoom={4}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={aoCompletar}
+              showGrid
+              restrictPosition={false}
+            />
+          </div>
+          <p className="dica">Arraste para posicionar. Use o zoom para aproximar ou afastar. A área clara é o que será publicado.</p>
+          <div className="crop-ctl">
+            <label>
+              Zoom
+              <input type="range" min={0.5} max={4} step={0.01} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} />
+            </label>
+            <button type="button" className="btn mini" onClick={() => setGiro((g) => (g + 90) % 360)}>⟳ Girar</button>
+            <button type="button" className="btn mini" onClick={() => { setZoom(1); setCrop({ x: 0, y: 0 }); setGiro(0); }}>Centralizar</button>
+          </div>
+          <div className="acts">
+            <button type="button" className="btn primary mini" onClick={aplicar} disabled={ocupado}>
+              {ocupado ? "Preparando…" : "Aplicar enquadramento"}
+            </button>
+            <button type="button" className="btn mini" onClick={() => setCortando(false)}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
       {erro && <p className="erro-in">{erro}</p>}
-      {mostrar && (
+
+      {!cortando && mostrar && (
         <div className="prev">
           <img
             src={mostrar}
             alt="Prévia da imagem"
-            style={{ aspectRatio: ALVO[formato].w + " / " + ALVO[formato].h, maxWidth: formato === "banner" ? 420 : 220 }}
+            style={{ aspectRatio: `${alvo.w} / ${alvo.h}`, maxWidth: formato === "banner" ? 420 : 220 }}
           />
-          {atual && !previa && (
-            <label className="chk">
-              <input type="checkbox" name="remover_imagem" /> Remover a imagem atual
-            </label>
-          )}
+          <div style={{ display: "grid", gap: 8 }}>
+            {fonte && (
+              <button type="button" className="btn mini" onClick={() => setCortando(true)}>Ajustar enquadramento</button>
+            )}
+            {previa && (
+              <button type="button" className="btn danger mini" onClick={remover}>Descartar nova imagem</button>
+            )}
+            {atual && !previa && (
+              <label className="chk">
+                <input type="checkbox" name="remover_imagem" /> Remover a imagem atual
+              </label>
+            )}
+          </div>
         </div>
       )}
+
       <p className="dica">
-        A imagem é recortada ao centro no formato escolhido e comprimida automaticamente, para não pesar no banco.
+        Aceita qualquer imagem (JPG, PNG, WebP, GIF, AVIF…). Ela é enquadrada, convertida e comprimida aqui no seu
+        navegador e guardada no Supabase Storage.
       </p>
     </div>
   );

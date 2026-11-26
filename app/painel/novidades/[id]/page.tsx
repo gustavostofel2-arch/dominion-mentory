@@ -2,10 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PostCard from "../../../_components/PostCard";
 import ComentarioForm from "../../../_components/ComentarioForm";
+import Comentarios from "../../../_components/Comentarios";
 import Rodape from "../../../_components/Rodape";
 import { sessaoLogada, eAdminAgora } from "@/lib/admin";
-import { formatarData, lerComentarios, lerPost } from "@/lib/feed";
-import { apagarComentario } from "../actions";
+import { lerComentarios, lerPost } from "@/lib/feed";
 
 export const metadata = { title: "Novidades | Dominion Mentory", robots: { index: false } };
 
@@ -14,9 +14,8 @@ export default async function PaginaPost({ params }: { params: Promise<{ id: str
   const s = await sessaoLogada();
   const email = s?.email ?? null;
   const admin = email ? await eAdminAgora(email) : false;
-  const post = await lerPost(id, email, admin);
+  const [post, comentarios] = await Promise.all([lerPost(id, email, admin), lerComentarios(id)]);
   if (!post) notFound();
-  const comentarios = await lerComentarios(post.id);
 
   return (
     <>
@@ -24,32 +23,12 @@ export default async function PaginaPost({ params }: { params: Promise<{ id: str
         <div className="wrap" style={{ paddingTop: 28 }}>
           <Link className="voltar-l" href="/painel/novidades">← Voltar para Novidades</Link>
           {!post.publicado && <div className="nota">Rascunho: só admins estão vendo esta postagem.</div>}
-          <PostCard post={post} completo />
+          <PostCard post={post} completo admin={admin} />
 
-          <section id="comentarios" className="coments" style={{ padding: 0 }}>
+          <section id="comentarios" className="coments">
             <h2>{comentarios.length} {comentarios.length === 1 ? "comentário" : "comentários"}</h2>
             <ComentarioForm postId={post.id} />
-            <ul>
-              {comentarios.map((c) => (
-                <li key={c.id}>
-                  <span className="av" aria-hidden="true">{(c.nome ?? "?").trim().charAt(0).toUpperCase()}</span>
-                  <div className="cb">
-                    <div className="cm">
-                      <b>{c.nome ?? "Mentorado"}</b>
-                      <small>{formatarData(c.criadoEm)}</small>
-                    </div>
-                    <p>{c.texto}</p>
-                  </div>
-                  {(c.email === email || admin) && (
-                    <form action={apagarComentario}>
-                      <input type="hidden" name="id" value={c.id} />
-                      <input type="hidden" name="post_id" value={post.id} />
-                      <button className="x" type="submit" aria-label="Apagar comentário" title="Apagar">×</button>
-                    </form>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <Comentarios comentarios={comentarios} postId={post.id} meuEmail={email} admin={admin} />
           </section>
         </div>
       </main>

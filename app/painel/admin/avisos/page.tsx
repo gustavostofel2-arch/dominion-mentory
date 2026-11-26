@@ -47,6 +47,9 @@ function Campos({ a }: { a?: Aviso }) {
       <label className="chk full">
         <input type="checkbox" name="ativo" defaultChecked={a ? a.ativo : true} /> No ar (aparece para os alunos)
       </label>
+      <label className="chk notificar full">
+        <input type="checkbox" name="notificar" /> <span><b>Notificar toda a comunidade</b> (sino + push no celular e computador)</span>
+      </label>
     </div>
   );
 }

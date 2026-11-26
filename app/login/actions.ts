@@ -6,6 +6,7 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { caminhoSeguro, registrarAcesso } from "@/lib/acesso";
+import { buscarUsuario } from "@/lib/perfil";
 import { assinar, COOKIE_NOME, COOKIE_OK, OPCOES_COOKIE, OPCOES_COOKIE_NOME } from "@/lib/sessao";
 
 export type Estado = { erro?: string; email?: string; detalhe?: string };
@@ -79,7 +80,7 @@ export async function entrar(_antes: Estado, form: FormData): Promise<Estado> {
 
   // Já deixa o acesso conferido: as próximas páginas não precisam consultar o Supabase.
   const jar = await cookies();
-  jar.set(COOKIE_OK, await assinar({ email, nome }), OPCOES_COOKIE);
+  jar.set(COOKIE_OK, await assinar({ email, nome, usuario: await buscarUsuario(email) }), OPCOES_COOKIE);
   if (nome) jar.set(COOKIE_NOME, nome, OPCOES_COOKIE_NOME);
 
   redirect(destino);

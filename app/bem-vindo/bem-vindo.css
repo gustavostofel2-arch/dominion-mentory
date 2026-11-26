@@ -1,0 +1,19 @@
+.bv-card{max-width:460px}
+.bv-previa{display:flex;gap:12px;align-items:center;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.bv-previa b{display:block;font-size:.95rem}
+.bv-previa small{font:500 .78rem var(--mono);color:var(--accent)}
+.av{width:40px;height:40px;border-radius:50%;background:var(--accent-soft);border:1px solid #4a3512;color:var(--accent);display:grid;place-items:center;font:700 .95rem var(--display);flex:none}
+.bv-form{display:flex;flex-direction:column;gap:8px}
+.bv-form label{font:500 .72rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.bv-campo{display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:0 14px;transition:border-color .15s}
+.bv-campo:focus-within{border-color:var(--accent)}
+.bv-campo.ok{border-color:#2f7a4a}
+.bv-campo.ruim{border-color:#b8431f}
+.bv-campo span{font:700 1.1rem var(--mono);color:var(--accent)}
+.bv-campo input{flex:1;min-width:0;background:none;border:0;color:var(--ink);font:500 1.05rem var(--mono);padding:14px 0;outline:none}
+.bv-dica{font-size:.85rem;color:var(--muted);min-height:1.3em}
+.bv-dica.ok{color:var(--ok)}
+.bv-dica.ruim{color:#ffb69b}
+.erro-in{color:#ffb69b;font-size:.88rem}
+.logincard .bv-campo input{border:0;background:transparent;padding:14px 0;border-radius:0;font:500 1.05rem var(--mono);color:var(--ink)}
+.logincard .bv-campo input:focus{outline:none}

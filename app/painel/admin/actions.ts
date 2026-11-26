@@ -1,10 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { exigirAdmin, sessaoLogada } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { apagarImagem, enviarImagem } from "@/lib/storage";
+import { conteudoVazio, limparDoc, textoPuro } from "@/lib/doc";
+import { notificarTodos } from "@/lib/notificar";
+import { emitir, type EventoTR } from "@/lib/tempo-real";
 
 const FERRAMENTAS = "/painel/admin/ferramentas";
 const AVISOS = "/painel/admin/avisos";
@@ -24,10 +28,33 @@ function urlOk(v: string): string | null {
   return null;
 }
 
+/** Manda o sinal em tempo real depois que a resposta já saiu (não atrasa o clique). */
+function emitirDepois(e: EventoTR) {
+  after(() => emitir(e));
+}
+
+/** Texto de retorno depois de avisar a comunidade. */
+async function avisarComunidade(
+  form: FormData,
+  dados: { tipo: "post" | "aviso"; titulo: string; texto: string; link: string; imagemUrl: string | null; refId: string | null; autorEmail: string },
+): Promise<string> {
+  if (!marcado(form, "notificar")) return "";
+  try {
+    const r = await notificarTodos(dados);
+    if (!r.ok) return " Não consegui enviar a notificação.";
+    emitirDepois({ t: "notificacao" });
+    if (r.semPush) return " Notificação enviada no sino (o push ainda não está configurado).";
+    return ` Notificação enviada no sino e por push para ${r.push} aparelho(s).`;
+  } catch {
+    return " A notificação não pôde ser enviada agora.";
+  }
+}
+
 function limpar(caminho: string) {
   revalidateTag("catalogo");
   revalidateTag("avisos");
   revalidateTag("posts");
+  revalidateTag("notificacoes");
   revalidatePath("/painel");
   revalidatePath(caminho);
 }
@@ -42,7 +69,7 @@ function falhou(caminho: string, e: unknown): never {
     voltar(
       caminho,
       "erro",
-      "Faltam tabelas ou colunas no Supabase. No SQL Editor, rode supabase/comunidade-etapa1.sql e depois supabase/comunidade-etapa2.sql.",
+      "Faltam tabelas ou colunas no Supabase. No SQL Editor, rode as etapas 1, 2, 3 e 4 (arquivos supabase/comunidade-etapa*.sql), nessa ordem.",
     );
   }
   voltar(caminho, "erro", "Não foi possível salvar agora. Tente de novo.");
@@ -286,7 +313,7 @@ async function imagemAtual(tabela: "posts" | "avisos", id: string): Promise<stri
 }
 
 export async function criarAviso(form: FormData) {
-  await exigirAdmin();
+  const email = await exigirAdmin();
   const campos = lerAviso(form);
   const imagem_url = await resolverImagem(form, "avisos", AVISOS, null);
   try {
@@ -295,12 +322,24 @@ export async function criarAviso(form: FormData) {
   } catch (e) {
     falhou(AVISOS, e);
   }
+  const extra = campos.ativo
+    ? await avisarComunidade(form, {
+        tipo: "aviso",
+        titulo: campos.titulo,
+        texto: campos.texto.slice(0, 140),
+        link: campos.link_url ?? "/painel",
+        imagemUrl: imagem_url,
+        refId: null,
+        autorEmail: email,
+      })
+    : "";
+  if (campos.ativo && !extra) emitirDepois({ t: "aviso" });
   limpar(AVISOS);
-  voltar(AVISOS, "ok", "Aviso publicado no topo do painel.");
+  voltar(AVISOS, "ok", "Aviso publicado no carrossel do Início." + extra);
 }
 
 export async function salvarAviso(form: FormData) {
-  await exigirAdmin();
+  const email = await exigirAdmin();
   const id = txt(form, "id", 40);
   const campos = lerAviso(form);
   const imagem_url = await resolverImagem(form, "avisos", AVISOS, await imagemAtual("avisos", id));
@@ -310,8 +349,20 @@ export async function salvarAviso(form: FormData) {
   } catch (e) {
     falhou(AVISOS, e);
   }
+  const extra = campos.ativo
+    ? await avisarComunidade(form, {
+        tipo: "aviso",
+        titulo: campos.titulo,
+        texto: campos.texto.slice(0, 140),
+        link: campos.link_url ?? "/painel",
+        imagemUrl: imagem_url,
+        refId: id,
+        autorEmail: email,
+      })
+    : "";
+  if (!extra) emitirDepois({ t: "atualizou" });
   limpar(AVISOS);
-  voltar(AVISOS, "ok", "Aviso salvo.");
+  voltar(AVISOS, "ok", "Aviso salvo." + extra);
 }
 
 export async function excluirAviso(form: FormData) {
@@ -324,6 +375,7 @@ export async function excluirAviso(form: FormData) {
   } catch (e) {
     falhou(AVISOS, e);
   }
+  emitirDepois({ t: "atualizou" });
   limpar(AVISOS);
   voltar(AVISOS, "ok", "Aviso excluído.");
 }
@@ -332,69 +384,276 @@ export async function excluirAviso(form: FormData) {
 
 const POSTS = "/painel/admin/posts";
 const FORMATOS = ["quadrada", "retrato", "banner"];
+const TIPOS_AVISO = ["info", "importante", "urgente"];
 
-function lerPost(form: FormData) {
+/** Para onde voltar depois da ação (a própria página de onde veio). Só caminhos do painel. */
+function retornoDe(form: FormData, padrao = POSTS): string {
+  const r = String(form.get("retorno") ?? "");
+  const limpo = r.split("?")[0];
+  return limpo.startsWith("/painel") && !limpo.startsWith("//") && !/\s/.test(limpo) ? limpo : padrao;
+}
+
+/** Texto rico do editor: só aceita o JSON com os estilos permitidos. */
+function lerCorpo(form: FormData, volta: string): string {
+  const bruto = String(form.get("corpo") ?? "").trim();
+  if (!bruto) return "";
+  if (bruto.length > 80000) voltar(volta, "erro", "O texto está grande demais.");
+  if (!bruto.startsWith("{")) return bruto.slice(0, 8000);
+  let doc;
+  try {
+    doc = limparDoc(JSON.parse(bruto));
+  } catch {
+    doc = null;
+  }
+  if (!doc) voltar(volta, "erro", "Não consegui ler o texto. Recarregue a página e tente de novo.");
+  const limpo = JSON.stringify(doc);
+  return conteudoVazio(limpo) ? "" : limpo;
+}
+
+function lerPost(form: FormData, volta: string) {
   const titulo = txt(form, "titulo", 160);
-  if (!titulo) voltar(POSTS, "erro", "Escreva o título da postagem.");
+  if (!titulo) voltar(volta, "erro", "Escreva o título da postagem.");
   const formato = txt(form, "formato", 10);
   return {
     titulo,
-    corpo: txt(form, "corpo", 8000),
+    corpo: lerCorpo(form, volta),
     formato: FORMATOS.includes(formato) ? formato : null,
     fixado: marcado(form, "fixado"),
     publicado: marcado(form, "publicado"),
   };
 }
 
+type DadosPost = { id: string; titulo: string; corpo: string; publicado: boolean; imagem: string | null; formato: string | null };
+
+/** Cria, atualiza ou remove o aviso ligado a uma postagem (o aviso leva para a postagem). */
+async function sincronizarAviso(form: FormData, post: DadosPost): Promise<"criado" | "atualizado" | "removido" | "nenhum"> {
+  const db = supabaseAdmin();
+  const quer = marcado(form, "virar_aviso") && post.publicado;
+  const { data: atual } = await db.from("avisos").select("id").eq("post_id", post.id).maybeSingle();
+  if (!quer) {
+    if (atual) {
+      await db.from("avisos").delete().eq("post_id", post.id);
+      return "removido";
+    }
+    return "nenhum";
+  }
+  const tipoBruto = txt(form, "aviso_tipo", 12);
+  const dias = txt(form, "aviso_dias", 6);
+  const campos: Record<string, unknown> = {
+    titulo: post.titulo.slice(0, 140),
+    texto: textoPuro(post.corpo).slice(0, 200),
+    tipo: TIPOS_AVISO.includes(tipoBruto) ? tipoBruto : "importante",
+    link_url: `/painel/novidades/${post.id}`,
+    link_texto: "Ver postagem",
+    ativo: true,
+    imagem_url: post.formato === "banner" ? post.imagem : null,
+  };
+  if (dias !== "manter" || !atual) {
+    const n = Number(dias);
+    campos.expira_em = n > 0 ? new Date(Date.now() + n * 864e5).toISOString() : null;
+  }
+  if (atual) {
+    const { error } = await db.from("avisos").update(campos).eq("post_id", post.id);
+    if (error) throw error;
+    return "atualizado";
+  }
+  const { error } = await db.from("avisos").insert({ ...campos, post_id: post.id });
+  if (error) throw error;
+  return "criado";
+}
+
+async function inserirPost(linha: Record<string, unknown>): Promise<string> {
+  const db = supabaseAdmin();
+  let r = await db.from("posts").insert(linha).select("id").single();
+  if (r.error && /autor_usuario/i.test(r.error.message)) {
+    // etapa 4 ainda não rodou no banco: grava sem o @ do autor
+    const resto = { ...linha };
+    delete resto.autor_usuario;
+    r = await db.from("posts").insert(resto).select("id").single();
+  }
+  if (r.error) throw r.error;
+  return (r.data as { id: string }).id;
+}
+
+/** Depois de salvar: sincroniza o aviso, avisa a comunidade (se marcado) e manda o sinal em tempo real. */
+async function depoisDePost(form: FormData, p: DadosPost & { novo: boolean }, email: string): Promise<string> {
+  let msg = "";
+  let aviso: "criado" | "atualizado" | "removido" | "nenhum" = "nenhum";
+  try {
+    aviso = await sincronizarAviso(form, p);
+  } catch (e) {
+    const m = (e as { message?: string } | null)?.message ?? "";
+    msg += /does not exist|schema cache|could not find|post_id/i.test(m)
+      ? " Não consegui criar o aviso: rode o SQL da etapa 4 no Supabase."
+      : " Não consegui criar o aviso.";
+  }
+  if (aviso === "criado" || aviso === "atualizado") msg += " Aviso no carrossel do Início.";
+  if (aviso === "removido") msg += " Aviso removido do Início.";
+
+  let notificou = false;
+  if (p.publicado) {
+    const extra = await avisarComunidade(form, {
+      tipo: "post",
+      titulo: p.titulo,
+      texto: textoPuro(p.corpo).slice(0, 140),
+      link: `/painel/novidades/${p.id}`,
+      imagemUrl: p.imagem,
+      refId: p.id,
+      autorEmail: email,
+    });
+    notificou = extra !== "";
+    msg += extra;
+  }
+  if (!notificou && p.publicado) {
+    emitirDepois({ t: p.novo ? (aviso === "criado" ? "aviso" : "post") : "atualizou" });
+  }
+  return msg;
+}
+
 export async function criarPost(form: FormData) {
   const email = await exigirAdmin();
+  const volta = retornoDe(form);
   const sessao = await sessaoLogada();
-  const campos = lerPost(form);
-  const imagem_url = await resolverImagem(form, "posts", POSTS, null);
+  const campos = lerPost(form, volta);
+  const imagem_url = await resolverImagem(form, "posts", volta, null);
+  const formato = imagem_url ? campos.formato ?? "quadrada" : null;
+  let id = "";
   try {
-    const { error } = await supabaseAdmin()
-      .from("posts")
-      .insert({ ...campos, formato: imagem_url ? campos.formato ?? "quadrada" : null, imagem_url, autor_email: email, autor_nome: sessao?.nome ?? null });
-    if (error) throw error;
+    id = await inserirPost({
+      ...campos,
+      formato,
+      imagem_url,
+      autor_email: email,
+      autor_nome: sessao?.nome ?? null,
+      autor_usuario: sessao?.usuario && sessao.usuario !== "-" ? sessao.usuario : null,
+    });
   } catch (e) {
-    falhou(POSTS, e);
+    falhou(volta, e);
   }
-  limpar(POSTS);
+  const extra = await depoisDePost(
+    form,
+    { id, titulo: campos.titulo, corpo: campos.corpo, publicado: campos.publicado, imagem: imagem_url, formato, novo: true },
+    email,
+  );
+  limpar(volta);
   revalidatePath("/painel/novidades");
-  voltar(POSTS, "ok", "Postagem publicada.");
+  voltar(volta, "ok", (campos.publicado ? "Postagem publicada." : "Rascunho salvo.") + extra);
 }
 
 export async function salvarPost(form: FormData) {
-  await exigirAdmin();
+  const email = await exigirAdmin();
+  const volta = retornoDe(form);
   const id = txt(form, "id", 40);
-  const campos = lerPost(form);
-  const imagem_url = await resolverImagem(form, "posts", POSTS, await imagemAtual("posts", id));
+  const campos = lerPost(form, volta);
+  const imagem_url = await resolverImagem(form, "posts", volta, await imagemAtual("posts", id));
+  const formato = imagem_url ? campos.formato ?? "quadrada" : null;
   try {
-    const { error } = await supabaseAdmin()
-      .from("posts")
-      .update({ ...campos, formato: imagem_url ? campos.formato ?? "quadrada" : null, imagem_url })
-      .eq("id", id);
+    const { error } = await supabaseAdmin().from("posts").update({ ...campos, formato, imagem_url }).eq("id", id);
     if (error) throw error;
   } catch (e) {
-    falhou(POSTS, e);
+    falhou(volta, e);
   }
-  limpar(POSTS);
+  const extra = await depoisDePost(
+    form,
+    { id, titulo: campos.titulo, corpo: campos.corpo, publicado: campos.publicado, imagem: imagem_url, formato, novo: false },
+    email,
+  );
+  limpar(volta);
   revalidatePath("/painel/novidades");
   revalidatePath(`/painel/novidades/${id}`);
-  voltar(POSTS, "ok", "Postagem salva.");
+  voltar(volta, "ok", "Postagem salva." + extra);
+}
+
+/** Fixa ou desafixa no topo das Novidades (menu dos 3 pontinhos). */
+export async function fixarPost(form: FormData) {
+  await exigirAdmin();
+  const volta = retornoDe(form, "/painel/novidades");
+  const id = txt(form, "id", 40);
+  const fixar = txt(form, "fixar", 2) === "1";
+  try {
+    const { error } = await supabaseAdmin().from("posts").update({ fixado: fixar }).eq("id", id);
+    if (error) throw error;
+  } catch (e) {
+    falhou(volta, e);
+  }
+  emitirDepois({ t: "atualizou" });
+  limpar(volta);
+  revalidatePath("/painel/novidades");
+  voltar(volta, "ok", fixar ? "Postagem fixada no topo." : "Postagem desafixada.");
+}
+
+/** Liga ou desliga o aviso de uma postagem (menu dos 3 pontinhos). */
+export async function alternarAvisoPost(form: FormData) {
+  await exigirAdmin();
+  const volta = retornoDe(form, "/painel/novidades");
+  const id = txt(form, "id", 40);
+  const ligar = txt(form, "ligar", 2) === "1";
+  const db = supabaseAdmin();
+  let msg = "";
+  try {
+    if (!ligar) {
+      await db.from("avisos").delete().eq("post_id", id);
+      msg = "Aviso removido do Início.";
+    } else {
+      const { data } = await db.from("posts").select("titulo,corpo,imagem_url,formato,publicado").eq("id", id).maybeSingle();
+      const p = data as { titulo: string; corpo: string; imagem_url: string | null; formato: string | null; publicado: boolean } | null;
+      if (!p || !p.publicado) voltar(volta, "erro", "Publique a postagem antes de transformá-la em aviso.");
+      const f = new FormData();
+      f.set("virar_aviso", "on");
+      f.set("aviso_tipo", "importante");
+      f.set("aviso_dias", "1");
+      await sincronizarAviso(f, { id, titulo: p!.titulo, corpo: p!.corpo, publicado: true, imagem: p!.imagem_url, formato: p!.formato });
+      msg = "Postagem virou aviso no Início (por 24 horas).";
+      emitirDepois({ t: "aviso" });
+    }
+  } catch (e) {
+    falhou(volta, e);
+  }
+  limpar(volta);
+  voltar(volta, "ok", msg);
 }
 
 export async function excluirPost(form: FormData) {
   await exigirAdmin();
+  const volta = retornoDe(form);
   const id = txt(form, "id", 40);
   try {
     await apagarImagem(await imagemAtual("posts", id));
     const { error } = await supabaseAdmin().from("posts").delete().eq("id", id);
     if (error) throw error;
   } catch (e) {
-    falhou(POSTS, e);
+    falhou(volta, e);
   }
-  limpar(POSTS);
+  emitirDepois({ t: "atualizou" });
+  limpar(volta);
   revalidatePath("/painel/novidades");
-  voltar(POSTS, "ok", "Postagem excluída.");
+  // se a pessoa estava dentro da própria postagem, volta para a lista
+  voltar(volta.startsWith("/painel/novidades/") ? "/painel/novidades" : volta, "ok", "Postagem excluída.");
+}
+
+// ---------------- Comunicado manual ----------------
+
+const NOTIFS = "/painel/admin/notificacoes";
+
+export async function enviarComunicado(form: FormData) {
+  const email = await exigirAdmin();
+  const titulo = txt(form, "titulo", 120);
+  const texto = txt(form, "texto", 180);
+  const linkBruto = txt(form, "link", 600);
+  const link = linkBruto ? urlOk(linkBruto) : null;
+  if (!titulo) voltar(NOTIFS, "erro", "Escreva o título da notificação.");
+  if (linkBruto && !link) voltar(NOTIFS, "erro", "O link precisa começar com https:// ou / (página do painel).");
+  let msg = "Notificação enviada no sino.";
+  try {
+    const r = await notificarTodos({ tipo: "manual", titulo, texto, link: link ?? "/painel", autorEmail: email });
+    if (!r.ok) falhou(NOTIFS, new Error(r.erro ?? ""));
+    emitirDepois({ t: "notificacao" });
+    msg = r.semPush
+      ? "Notificação enviada no sino (o push ainda não está configurado)."
+      : `Notificação enviada no sino e por push para ${r.push} aparelho(s).`;
+  } catch (e) {
+    falhou(NOTIFS, e);
+  }
+  limpar(NOTIFS);
+  voltar(NOTIFS, "ok", msg);
 }

@@ -6,7 +6,7 @@ const TIPOS: Record<string, string> = { "image/webp": "webp", "image/jpeg": "jpg
 const MAX_BYTES = 2_500_000;
 
 /** Envia uma imagem para a pasta pública "feed". Devolve o link, ou null se não veio arquivo. */
-export async function enviarImagem(arquivo: FormDataEntryValue | null, pasta: "posts" | "avisos"): Promise<string | null> {
+export async function enviarImagem(arquivo: FormDataEntryValue | null, pasta: "posts" | "avisos" | "blocos"): Promise<string | null> {
   if (!(arquivo instanceof File) || arquivo.size === 0) return null;
   const ext = TIPOS[arquivo.type];
   if (!ext) throw new Error("Formato de imagem não aceito. Use JPG, PNG ou WebP.");

@@ -4,8 +4,10 @@ import { usePathname } from "next/navigation";
 
 const ABAS = [
   { href: "/painel/admin", label: "Visão geral" },
+  { href: "/painel/admin/paginas", label: "Menu e páginas" },
   { href: "/painel/admin/avisos", label: "Avisos" },
   { href: "/painel/admin/posts", label: "Postagens" },
+  { href: "/painel/admin/notificacoes", label: "Notificações" },
   { href: "/painel/admin/ferramentas", label: "Módulos e ferramentas" },
 ];
 

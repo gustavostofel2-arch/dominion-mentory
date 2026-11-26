@@ -13,7 +13,7 @@ export async function emailLogado(): Promise<string | null> {
 }
 
 /** E-mail e nome da pessoa logada (cookie assinado). */
-export async function sessaoLogada(): Promise<{ email: string; nome: string | null } | null> {
+export async function sessaoLogada(): Promise<{ email: string; nome: string | null; usuario?: string | null } | null> {
   const jar = await cookies();
   return verificar(jar.get(COOKIE_OK)?.value);
 }

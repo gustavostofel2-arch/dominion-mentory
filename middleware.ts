@@ -1,5 +1,6 @@
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { buscarUsuario } from "@/lib/perfil";
 import {
   assinar,
   verificar,
@@ -18,7 +19,7 @@ const PUBLICOS = new Set(["/img/logo.png", "/img/higor.webp"]);
 
 function negar(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const ehPagina = pathname === "/painel" || pathname.startsWith("/painel/") || pathname.startsWith("/ferramentas/");
+  const ehPagina = pathname === "/painel" || pathname.startsWith("/painel/") || pathname.startsWith("/ferramentas/") || pathname === "/bem-vindo";
   let resp: NextResponse;
   if (ehPagina) {
     const url = request.nextUrl.clone();
@@ -84,6 +85,23 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     return NextResponse.next();
   }
 
+  // Quem já está dentro mas ainda não escolheu o @ vai para a tela de boas-vindas.
+  if (atual && pathname === "/bem-vindo") {
+    if (atual.usuario) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/painel";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+  if (atual && !atual.usuario && pathname.startsWith("/painel")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/bem-vindo";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   // Caminho rápido: já foi conferido há pouco, não consulta o Supabase.
   if (atual) {
     const resp = NextResponse.next();
@@ -104,15 +122,35 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     .maybeSingle();
   if (!data || !data.ativo) return negar(request);
 
-  const valor = await assinar({ email: data.email, nome: data.nome });
+  const usuario = await buscarUsuario(data.email);
+  const valor = await assinar({ email: data.email, nome: data.nome, usuario });
   request.cookies.set(COOKIE_OK, valor);
   const final = NextResponse.next({ request });
   response.cookies.getAll().forEach((c) => final.cookies.set(c));
   final.cookies.set(COOKIE_OK, valor, OPCOES_COOKIE);
   if (data.nome) final.cookies.set(COOKIE_NOME, data.nome, OPCOES_COOKIE_NOME);
-  return liberar(request, event, { email: data.email, nome: data.nome }, final);
+  if (!usuario && (pathname.startsWith("/painel") || pathname === "/bem-vindo")) {
+    if (pathname.startsWith("/painel")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/bem-vindo";
+      url.search = "";
+      const r = NextResponse.redirect(url);
+      response.cookies.getAll().forEach((c) => r.cookies.set(c));
+      r.cookies.set(COOKIE_OK, valor, OPCOES_COOKIE);
+      return r;
+    }
+  } else if (usuario && pathname === "/bem-vindo") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/painel";
+    url.search = "";
+    const r = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((c) => r.cookies.set(c));
+    r.cookies.set(COOKIE_OK, valor, OPCOES_COOKIE);
+    return r;
+  }
+  return liberar(request, event, { email: data.email, nome: data.nome, usuario }, final);
 }
 
 export const config = {
-  matcher: ["/", "/painel/:path*", "/ferramentas/:path*", "/img/:path*", "/login"],
+  matcher: ["/", "/painel/:path*", "/ferramentas/:path*", "/img/:path*", "/login", "/bem-vindo"],
 };

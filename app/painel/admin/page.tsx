@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { lerAvisosAdmin, lerCatalogoCompleto } from "@/lib/catalogo";
 
@@ -24,6 +25,25 @@ export default async function AdminInicio() {
           <b>SQL Editor</b>, cole o arquivo <code>supabase/comunidade-etapa1.sql</code> e clique em <b>Run</b>; depois faça o mesmo com <code>supabase/comunidade-etapa2.sql</code>.
         </div>
       )}
+
+      <div className="acoes-adm">
+        <Link href="/painel/admin/paginas">
+          <b>Menu e páginas</b>
+          <span>Crie e organize as abas. Monte cada uma com blocos.</span>
+        </Link>
+        <Link href="/painel/admin/posts#novo">
+          <b>Nova postagem</b>
+          <span>Novidade ou aula. Aparece em Novidades e pode virar aviso.</span>
+        </Link>
+        <Link href="/painel/admin/avisos">
+          <b>Novo aviso</b>
+          <span>Algo urgente (call, prazo). Passa no carrossel do Início.</span>
+        </Link>
+        <Link href="/painel/admin/notificacoes">
+          <b>Nova notificação</b>
+          <span>Sino e push para toda a comunidade, na hora.</span>
+        </Link>
+      </div>
 
       <div className="kpis">
         <div className="stat"><b>{modulos.length}</b><span>módulos</span></div>

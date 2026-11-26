@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Icone } from "./Icone";
 
 export type EntradaBusca = { titulo: string; descricao: string; grupo: string; url: string; externo: boolean };
@@ -11,6 +12,7 @@ export default function Busca({ entradas }: { entradas: EntradaBusca[] }) {
   const [q, setQ] = useState("");
   const [aberto, setAberto] = useState(false);
   const [sel, setSel] = useState(0);
+  const router = useRouter();
   const caixa = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLInputElement>(null);
 
@@ -63,7 +65,7 @@ export default function Busca({ entradas }: { entradas: EntradaBusca[] }) {
     setAberto(false);
     setQ("");
     if (e.externo) window.open(e.url, "_blank", "noopener,noreferrer");
-    else window.location.href = e.url;
+    else router.push(e.url);
   }
 
   function teclas(ev: React.KeyboardEvent) {
