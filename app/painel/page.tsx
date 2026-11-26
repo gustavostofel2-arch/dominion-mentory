@@ -1,54 +1,30 @@
-import Link from "next/link";
-import { NomeTopo, Saudacao } from "../_components/Nome";
-import { sair } from "../login/actions";
+import { Saudacao } from "../_components/Nome";
 import RaceCompleta from "../_components/RaceCompleta";
-import { FLOW_URL, GRUPOS, ICONES, MAPA_ESTUDOS_URL, REGRAS, TOTAL_FERRAMENTAS, TURBO_FLOW_URL } from "@/lib/conteudo";
+import Avisos from "../_components/Avisos";
+import { Icone } from "../_components/Icone";
+import { carregarAvisos, carregarCatalogo } from "@/lib/catalogo";
+import { FLOW_URL, REGRAS, TURBO_FLOW_URL } from "@/lib/conteudo";
 
 export const metadata = { title: "Painel | Dominion Mentory", robots: { index: false } };
 
-function Icone({ nome }: { nome: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      dangerouslySetInnerHTML={{ __html: ICONES[nome] ?? "" }}
-    />
-  );
-}
+export default async function Painel() {
+  const [modulos, avisos] = await Promise.all([carregarCatalogo(), carregarAvisos()]);
 
-export default function Painel() {
+  const destaques = modulos.flatMap((m) => m.itens.filter((i) => i.destaque));
+  const grupos = modulos
+    .map((m) => ({ ...m, itens: m.itens.filter((i) => !i.destaque) }))
+    .filter((m) => m.itens.length > 0);
+  const total = modulos.reduce((n, m) => n + m.itens.length, 0);
+
   return (
     <>
-      <header className="nav">
-        <div className="wrap">
-          <Link href="/painel" aria-label="Painel Dominion Mentory">
-            <img className="lg" src="/img/logo.png" alt="Dominion Mentory" />
-          </Link>
-          <nav aria-label="Seções">
-            <a href="#ferramentas">Ferramentas</a>
-            <a href="#flow" className="hide-m">Dominion Flow</a>
-            <a href="#race" className="hide-m">Race</a>
-            <a href="#regras">Regras</a>
-            <NomeTopo />
-          </nav>
-          <form action={sair}>
-            <button className="btn sm" type="submit">Sair</button>
-          </form>
-        </div>
-      </header>
-
       <main>
+        <Avisos avisos={avisos} />
+
         <div className="wrap dash-hero">
           <span className="eyebrow">Painel do mentorado</span>
           <Saudacao />
-          <p>
-            {TOTAL_FERRAMENTAS} ferramentas e aulas à sua disposição. Escolha o que usar agora, abra e execute.
-          </p>
+          <p>{total} ferramentas e aulas à sua disposição. Escolha o que usar agora, abra e execute.</p>
         </div>
 
         <section id="ferramentas">
@@ -56,32 +32,32 @@ export default function Painel() {
             <div className="sec-head">
               <span className="eyebrow">Ferramentas</span>
               <h2>Escolha o sistema e abra</h2>
-              <p>
-                Cada ferramenta abre em uma nova aba. Para voltar, é só fechar a aba e você continua aqui no painel.
-              </p>
+              <p>Cada ferramenta abre em uma nova aba. Para voltar, é só fechar a aba e você continua aqui no painel.</p>
             </div>
 
-            <a className="start" href={MAPA_ESTUDOS_URL} target="_blank" rel="noopener noreferrer">
-              <div style={{ position: "relative", zIndex: 1 }}>
-                <span className="chip aula">Comece aqui</span>
-                <h3>Mapa de Estudos</h3>
-                <p>Por onde eu começo? Todo mundo parte do mesmo ponto e a rota muda conforme o seu nível.</p>
-              </div>
-              <span className="btn primary go">Abrir o mapa</span>
-            </a>
+            {destaques.map((d) => (
+              <a className="start" href={d.url} target="_blank" rel="noopener noreferrer" key={d.id} style={{ marginBottom: 14 }}>
+                <div style={{ position: "relative", zIndex: 1 }}>
+                  <span className="chip aula">{d.tag || "Comece aqui"}</span>
+                  <h3>{d.titulo}</h3>
+                  <p>{d.descricao}</p>
+                </div>
+                <span className="btn primary go">Abrir</span>
+              </a>
+            ))}
 
             <div style={{ marginTop: 34 }}>
-              {GRUPOS.map((g) => (
-                <div className="group" key={g.titulo}>
+              {grupos.map((g) => (
+                <div className="group" key={g.id}>
                   <h3>{g.titulo}</h3>
                   <div className="grid">
                     {g.itens.map((it) => (
-                      <a className="tool" href={it.url} target="_blank" rel="noopener noreferrer" key={it.url}>
+                      <a className="tool" href={it.url} target="_blank" rel="noopener noreferrer" key={it.id}>
                         <span className="ic"><Icone nome={it.icone} /></span>
-                        <h4>{it.nome}</h4>
-                        <p>{it.texto}</p>
+                        <h4>{it.titulo}</h4>
+                        <p>{it.descricao}</p>
                         <div className="row">
-                          <span className={`chip ${g.classe}`}>{it.tag}</span>
+                          {it.tag ? <span className={`chip ${g.cor}`}>{it.tag}</span> : <span />}
                           <span className="open">abrir →</span>
                         </div>
                       </a>
@@ -153,7 +129,6 @@ export default function Painel() {
             </div>
           </div>
         </section>
-
       </main>
 
       <footer>

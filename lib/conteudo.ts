@@ -127,6 +127,19 @@ export const ICONES: Record<string, string> = {
   hanger: '<path d="M12 7a2 2 0 1 0-2-2M12 7v3l9 6a1.5 1.5 0 0 1-.8 2.7H3.8A1.5 1.5 0 0 1 3 16l9-6"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   tag: '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.2"/>',
+  home: '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/>',
+  trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+  book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M9 7h6"/>',
+  shield: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  megaphone: '<path d="M3 11v2a1 1 0 0 0 1 1h3l8 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M19 8a5 5 0 0 1 0 8"/>',
+  bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+};
+
+/** Nomes dos ícones para o Admin escolher. */
+export const ICONES_NOMES: Record<string, string> = {
+  grid: "Calendário", layers: "Camadas", calc: "Calculadora", gauge: "Medidor", chart: "Gráfico",
+  bag: "Sacola", hanger: "Cabide", user: "Pessoa", tag: "Etiqueta", bolt: "Raio", book: "Livro", trophy: "Troféu",
 };
 
 export type Regra = { titulo: string; html: string; rigida?: boolean };
