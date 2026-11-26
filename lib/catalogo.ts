@@ -25,6 +25,7 @@ export type Aviso = {
   tipo: TipoAviso;
   linkUrl: string | null;
   linkTexto: string | null;
+  imagemUrl: string | null;
   ativo: boolean;
   expiraEm: string | null;
   criadoEm: string;
@@ -144,6 +145,7 @@ type LinhaAviso = {
   tipo: TipoAviso;
   link_url: string | null;
   link_texto: string | null;
+  imagem_url: string | null;
   ativo: boolean;
   expira_em: string | null;
   criado_em: string;
@@ -157,6 +159,7 @@ function paraAviso(a: LinhaAviso): Aviso {
     tipo: a.tipo,
     linkUrl: a.link_url,
     linkTexto: a.link_texto,
+    imagemUrl: a.imagem_url ?? null,
     ativo: a.ativo,
     expiraEm: a.expira_em,
     criadoEm: a.criado_em,

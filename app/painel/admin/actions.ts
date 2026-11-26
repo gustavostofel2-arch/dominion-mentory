@@ -2,8 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { exigirAdmin } from "@/lib/admin";
+import { exigirAdmin, sessaoLogada } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { apagarImagem, enviarImagem } from "@/lib/storage";
 
 const FERRAMENTAS = "/painel/admin/ferramentas";
 const AVISOS = "/painel/admin/avisos";
@@ -26,6 +27,7 @@ function urlOk(v: string): string | null {
 function limpar(caminho: string) {
   revalidateTag("catalogo");
   revalidateTag("avisos");
+  revalidateTag("posts");
   revalidatePath("/painel");
   revalidatePath(caminho);
 }
@@ -36,8 +38,12 @@ function voltar(caminho: string, tipo: "ok" | "erro", msg: string): never {
 
 function falhou(caminho: string, e: unknown): never {
   const m = (e as { message?: string } | null)?.message ?? "";
-  if (/relation .* does not exist|schema cache|could not find the table/i.test(m)) {
-    voltar(caminho, "erro", "As tabelas ainda não existem no Supabase. Rode o arquivo supabase/comunidade-etapa1.sql no SQL Editor.");
+  if (/does not exist|schema cache|could not find/i.test(m)) {
+    voltar(
+      caminho,
+      "erro",
+      "Faltam tabelas ou colunas no Supabase. No SQL Editor, rode supabase/comunidade-etapa1.sql e depois supabase/comunidade-etapa2.sql.",
+    );
   }
   voltar(caminho, "erro", "Não foi possível salvar agora. Tente de novo.");
 }
@@ -249,11 +255,42 @@ function lerAviso(form: FormData) {
   };
 }
 
+/** Cuida da imagem do formulário: envia nova, mantém a atual ou remove. Devolve o link final. */
+async function resolverImagem(
+  form: FormData,
+  pasta: "posts" | "avisos",
+  caminho: string,
+  atual: string | null,
+): Promise<string | null> {
+  try {
+    const nova = await enviarImagem(form.get("imagem"), pasta);
+    if (nova) {
+      await apagarImagem(atual);
+      return nova;
+    }
+    if (marcado(form, "remover_imagem")) {
+      await apagarImagem(atual);
+      return null;
+    }
+    return atual;
+  } catch (e) {
+    const m = (e as { message?: string } | null)?.message ?? "";
+    if (/bucket not found/i.test(m)) voltar(caminho, "erro", "A pasta de imagens ainda não existe. Rode o arquivo supabase/comunidade-etapa2.sql.");
+    voltar(caminho, "erro", m && m.length < 120 ? m : "Não foi possível enviar a imagem.");
+  }
+}
+
+async function imagemAtual(tabela: "posts" | "avisos", id: string): Promise<string | null> {
+  const { data } = await supabaseAdmin().from(tabela).select("imagem_url").eq("id", id).maybeSingle();
+  return (data as { imagem_url?: string | null } | null)?.imagem_url ?? null;
+}
+
 export async function criarAviso(form: FormData) {
   await exigirAdmin();
   const campos = lerAviso(form);
+  const imagem_url = await resolverImagem(form, "avisos", AVISOS, null);
   try {
-    const { error } = await supabaseAdmin().from("avisos").insert(campos);
+    const { error } = await supabaseAdmin().from("avisos").insert({ ...campos, imagem_url });
     if (error) throw error;
   } catch (e) {
     falhou(AVISOS, e);
@@ -266,8 +303,9 @@ export async function salvarAviso(form: FormData) {
   await exigirAdmin();
   const id = txt(form, "id", 40);
   const campos = lerAviso(form);
+  const imagem_url = await resolverImagem(form, "avisos", AVISOS, await imagemAtual("avisos", id));
   try {
-    const { error } = await supabaseAdmin().from("avisos").update(campos).eq("id", id);
+    const { error } = await supabaseAdmin().from("avisos").update({ ...campos, imagem_url }).eq("id", id);
     if (error) throw error;
   } catch (e) {
     falhou(AVISOS, e);
@@ -278,12 +316,85 @@ export async function salvarAviso(form: FormData) {
 
 export async function excluirAviso(form: FormData) {
   await exigirAdmin();
+  const id = txt(form, "id", 40);
   try {
-    const { error } = await supabaseAdmin().from("avisos").delete().eq("id", txt(form, "id", 40));
+    await apagarImagem(await imagemAtual("avisos", id));
+    const { error } = await supabaseAdmin().from("avisos").delete().eq("id", id);
     if (error) throw error;
   } catch (e) {
     falhou(AVISOS, e);
   }
   limpar(AVISOS);
   voltar(AVISOS, "ok", "Aviso excluído.");
+}
+
+// ---------------- Postagens (novidades) ----------------
+
+const POSTS = "/painel/admin/posts";
+const FORMATOS = ["quadrada", "retrato", "banner"];
+
+function lerPost(form: FormData) {
+  const titulo = txt(form, "titulo", 160);
+  if (!titulo) voltar(POSTS, "erro", "Escreva o título da postagem.");
+  const formato = txt(form, "formato", 10);
+  return {
+    titulo,
+    corpo: txt(form, "corpo", 8000),
+    formato: FORMATOS.includes(formato) ? formato : null,
+    fixado: marcado(form, "fixado"),
+    publicado: marcado(form, "publicado"),
+  };
+}
+
+export async function criarPost(form: FormData) {
+  const email = await exigirAdmin();
+  const sessao = await sessaoLogada();
+  const campos = lerPost(form);
+  const imagem_url = await resolverImagem(form, "posts", POSTS, null);
+  try {
+    const { error } = await supabaseAdmin()
+      .from("posts")
+      .insert({ ...campos, formato: imagem_url ? campos.formato ?? "quadrada" : null, imagem_url, autor_email: email, autor_nome: sessao?.nome ?? null });
+    if (error) throw error;
+  } catch (e) {
+    falhou(POSTS, e);
+  }
+  limpar(POSTS);
+  revalidatePath("/painel/novidades");
+  voltar(POSTS, "ok", "Postagem publicada.");
+}
+
+export async function salvarPost(form: FormData) {
+  await exigirAdmin();
+  const id = txt(form, "id", 40);
+  const campos = lerPost(form);
+  const imagem_url = await resolverImagem(form, "posts", POSTS, await imagemAtual("posts", id));
+  try {
+    const { error } = await supabaseAdmin()
+      .from("posts")
+      .update({ ...campos, formato: imagem_url ? campos.formato ?? "quadrada" : null, imagem_url })
+      .eq("id", id);
+    if (error) throw error;
+  } catch (e) {
+    falhou(POSTS, e);
+  }
+  limpar(POSTS);
+  revalidatePath("/painel/novidades");
+  revalidatePath(`/painel/novidades/${id}`);
+  voltar(POSTS, "ok", "Postagem salva.");
+}
+
+export async function excluirPost(form: FormData) {
+  await exigirAdmin();
+  const id = txt(form, "id", 40);
+  try {
+    await apagarImagem(await imagemAtual("posts", id));
+    const { error } = await supabaseAdmin().from("posts").delete().eq("id", id);
+    if (error) throw error;
+  } catch (e) {
+    falhou(POSTS, e);
+  }
+  limpar(POSTS);
+  revalidatePath("/painel/novidades");
+  voltar(POSTS, "ok", "Postagem excluída.");
 }

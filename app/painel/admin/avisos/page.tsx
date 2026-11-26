@@ -1,6 +1,7 @@
 import { lerAvisosAdmin, type Aviso } from "@/lib/catalogo";
 import { criarAviso, excluirAviso, salvarAviso } from "../actions";
 import ConfirmButton from "../ConfirmButton";
+import UploadImagem from "../../../_components/UploadImagem";
 
 /** timestamptz -> "2026-11-30T18:00" no horário de Brasília, para o campo de data. */
 function paraCampo(iso: string | null): string {
@@ -39,6 +40,9 @@ function Campos({ a }: { a?: Aviso }) {
       <div className="fld">
         <label>Texto do botão</label>
         <input type="text" name="link_texto" maxLength={40} defaultValue={a?.linkTexto ?? ""} placeholder="Entrar na call" />
+      </div>
+      <div className="full">
+        <UploadImagem atual={a?.imagemUrl} formatoFixo="banner" />
       </div>
       <label className="chk full">
         <input type="checkbox" name="ativo" defaultChecked={a ? a.ativo : true} /> No ar (aparece para os alunos)

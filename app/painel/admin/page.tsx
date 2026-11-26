@@ -21,8 +21,7 @@ export default async function AdminInicio() {
       {!doBanco && (
         <div className="nota">
           O banco ainda não tem as tabelas da etapa 1, então o painel está mostrando o conteúdo de reserva. No Supabase, abra{" "}
-          <b>SQL Editor</b>, cole o arquivo <code>supabase/comunidade-etapa1.sql</code> e clique em <b>Run</b>. Depois disso tudo aqui passa a
-          funcionar.
+          <b>SQL Editor</b>, cole o arquivo <code>supabase/comunidade-etapa1.sql</code> e clique em <b>Run</b>; depois faça o mesmo com <code>supabase/comunidade-etapa2.sql</code>.
         </div>
       )}
 
@@ -35,9 +34,10 @@ export default async function AdminInicio() {
       <div className="panel">
         <h2>O que você pode fazer aqui</h2>
         <ul style={{ margin: 0, paddingLeft: 18, color: "#d2d0ca", display: "grid", gap: 6 }}>
-          <li><b>Avisos:</b> faixa em destaque no topo do painel, com botão e data para sair do ar.</li>
+          <li><b>Avisos:</b> faixa em destaque no topo do painel, com banner 16:9, botão e data para sair do ar.</li>
+          <li><b>Postagens:</b> novidades com título, negrito, emojis, links e imagem. Os alunos curtem e comentam.</li>
           <li><b>Módulos e ferramentas:</b> criar, renomear, trocar o link, mudar a ordem, esconder ou excluir.</li>
-          <li>Em breve: feed de novidades com curtidas e comentários, e notificações push.</li>
+          <li>Em breve: notificações push, inclusive agendadas.</li>
         </ul>
       </div>
 

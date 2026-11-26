@@ -196,6 +196,29 @@ export const REGRAS: Regra[] = [
   },
 ];
 
+export const REGRAS_PLATAFORMA: Regra[] = [
+  {
+    titulo: "Novidades e avisos são da equipe",
+    html: "<p>Só a equipe da Dominion publica avisos e novidades. O aviso fica sempre no topo do painel e das Novidades: confira ao entrar.</p>",
+  },
+  {
+    titulo: "Comentários e curtidas",
+    html: "<p>Use os comentários para tirar dúvidas e trocar ideias sobre a postagem. Seja objetivo, educado e ajude quem está começando.</p>",
+  },
+  {
+    titulo: "Sem spam, links de terceiros ou autopromoção",
+    html: "<p>Comentários com propaganda, links suspeitos ou divulgação de outros produtos e comunidades serão apagados.</p>",
+  },
+  {
+    titulo: "Proteja os seus dados",
+    html: "<p>Nunca publique senhas, códigos de acesso ou dados pessoais seus ou de outras pessoas nos comentários. Para assuntos da sua conta, fale com a equipe.</p>",
+  },
+  {
+    titulo: "A equipe pode moderar",
+    html: "<p>Comentários que desrespeitem as regras da mentoria podem ser apagados pela equipe, e o descumprimento segue as advertências da mentoria.</p>",
+  },
+];
+
 export const REGULAMENTO_RACE: Regra[] = [
   {
     titulo: "Período e prazo de envio",

@@ -12,6 +12,12 @@ export async function emailLogado(): Promise<string | null> {
   return s?.email ?? null;
 }
 
+/** E-mail e nome da pessoa logada (cookie assinado). */
+export async function sessaoLogada(): Promise<{ email: string; nome: string | null } | null> {
+  const jar = await cookies();
+  return verificar(jar.get(COOKIE_OK)?.value);
+}
+
 /** Confere no banco, sem cache: o e-mail está em "admins" e é mentorado ativo? */
 async function conferirAdmin(email: string): Promise<boolean> {
   try {
@@ -35,6 +41,11 @@ const adminEmCache = unstable_cache(async (email: string) => conferirAdmin(email
 
 export async function ehAdminParaMenu(email: string | null): Promise<boolean> {
   return email ? adminEmCache(email) : false;
+}
+
+/** Confere no banco (sem cache) se o e-mail é admin. */
+export async function eAdminAgora(email: string): Promise<boolean> {
+  return conferirAdmin(email);
 }
 
 /** Use no começo de TODA ação e página do Admin. Sem ser admin, responde 404. */
