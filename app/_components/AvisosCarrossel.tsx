@@ -9,10 +9,27 @@ const ROTULO = { info: "Aviso", importante: "Importante", urgente: "Urgente" } a
 const INTERVALO = 5000;
 
 function Cartao({ a }: { a: Aviso }) {
+  // imagem larga (banner 16:9) vai em cima do aviso; quadrada ou retrato vira miniatura ao lado do texto
+  const [larga, setLarga] = useState(true);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const medir = (i: HTMLImageElement | null) => {
+    if (i && i.naturalWidth) setLarga(i.naturalWidth / Math.max(i.naturalHeight, 1) >= 1.5);
+  };
+  // a imagem pode já ter carregado antes de o React ligar o onLoad (cache): mede de novo ao montar
+  useEffect(() => medir(imgRef.current), [a.imagemUrl]);
   const interno = !!a.linkUrl && a.linkUrl.startsWith("/");
   const conteudo = (
     <>
-      {a.imagemUrl && <img className="aviso-img" src={a.imagemUrl} alt="" style={{ aspectRatio: "16 / 9" }} decoding="async" />}
+      {a.imagemUrl && (
+        <img
+          className="aviso-img"
+          src={a.imagemUrl}
+          alt=""
+          decoding="async"
+          ref={imgRef}
+          onLoad={(e) => medir(e.currentTarget)}
+        />
+      )}
       <div className="aviso-corpo">
         <span className="ic"><Icone nome="megaphone" /></span>
         <div className="tx">
@@ -24,7 +41,7 @@ function Cartao({ a }: { a: Aviso }) {
       </div>
     </>
   );
-  const classe = `aviso ${a.tipo}${a.imagemUrl ? " com-img" : ""}`;
+  const classe = `aviso ${a.tipo}${a.imagemUrl ? (larga ? " com-img" : " com-mini") : ""}`;
   if (!a.linkUrl) return <article className={classe}>{conteudo}</article>;
   return interno ? (
     <Link className={`${classe} clicavel`} href={a.linkUrl}>{conteudo}</Link>

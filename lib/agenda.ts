@@ -66,7 +66,7 @@ export async function sincronizarAvisoDoPost(
     link_url: `/painel/novidades/${post.id}`,
     link_texto: "Ver postagem",
     ativo: true,
-    imagem_url: post.formato === "banner" ? post.imagem : null,
+    imagem_url: post.imagem,
   };
   if (opts.dias !== "manter" || !atual) {
     const n = Number(opts.dias);

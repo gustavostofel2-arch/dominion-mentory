@@ -108,7 +108,7 @@ export default function CamposPost({
                 <option value="0">Sem prazo (até eu tirar)</option>
               </select>
             </div>
-            <p className="dica full">Dica: se quiser a imagem no aviso, use o formato <b>Banner 16:9</b> acima.</p>
+            <p className="dica full">A imagem da postagem vai junto no aviso: <b>Banner 16:9</b> aparece larga em cima do aviso; <b>quadrada</b> ou <b>retrato</b> aparece como miniatura ao lado do texto.</p>
           </div>
         )}
       </fieldset>

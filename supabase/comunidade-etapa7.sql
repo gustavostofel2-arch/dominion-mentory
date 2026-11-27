@@ -50,3 +50,11 @@ $$;
 
 revoke all on function public.feed_posts(text, int, boolean, boolean, boolean, text, boolean) from public, anon, authenticated;
 grant execute on function public.feed_posts(text, int, boolean, boolean, boolean, text, boolean) to service_role;
+
+-- 3) Avisos que já foram criados a partir de postagens passam a levar a imagem da postagem ---
+update public.avisos a
+   set imagem_url = p.imagem_url
+  from public.posts p
+ where a.post_id = p.id
+   and a.imagem_url is null
+   and p.imagem_url is not null;
