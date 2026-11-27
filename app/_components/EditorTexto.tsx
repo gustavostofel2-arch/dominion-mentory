@@ -8,11 +8,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { lerDoc, type No } from "@/lib/doc";
 import { markdownParaDoc, temMarkdown } from "@/lib/markdown";
 
-const EMOJIS = [
-  "🔥", "🚀", "🏆", "👏", "✅", "⚠️", "📢", "💡", "💰", "🎯", "📈", "⏰",
-  "🎥", "❤️", "🙌", "👉", "👇", "🤝", "💪", "🎉", "⭐", "📌", "📅", "🔔",
-  "😀", "😉", "😎", "🤩", "😂", "🙏", "👀", "💎", "🛒", "📦", "🧠", "✨",
-];
+import { CATEGORIAS_EMOJI } from "@/lib/emojis";
 
 /** Postagens antigas em texto simples viram parágrafos para poder editar. */
 function inicial(valor: string): No | string {
@@ -79,6 +75,7 @@ export default function EditorTexto({
   }, [aoMudar]);
   const [json, setJson] = useState(() => JSON.stringify(inicio));
   const [emojis, setEmojis] = useState(false);
+  const [catEmoji, setCatEmoji] = useState(0);
   const [linkAberto, setLinkAberto] = useState(false);
   const [link, setLink] = useState("");
   const [linkErro, setLinkErro] = useState("");
@@ -212,17 +209,17 @@ export default function EditorTexto({
       )}
 
       {emojis && (
-        <div className="emo" aria-label="Emojis">
-          {EMOJIS.map((e) => (
-            <button
-              type="button"
-              key={e}
-              onMouseDown={(ev) => ev.preventDefault()}
-              onClick={() => editor.chain().focus().insertContent(e).run()}
-            >
-              {e}
-            </button>
-          ))}
+        <div className="emo-painel" aria-label="Emojis">
+          <div className="emo-abas">
+            {CATEGORIAS_EMOJI.map((c, i) => (
+              <button type="button" key={c.nome} className={i === catEmoji ? "on" : ""} title={c.nome} onMouseDown={(ev) => ev.preventDefault()} onClick={() => setCatEmoji(i)}>{c.icone}</button>
+            ))}
+          </div>
+          <div className="emo-grade">
+            {CATEGORIAS_EMOJI[catEmoji].lista.map((e) => (
+              <button type="button" key={e} onMouseDown={(ev) => ev.preventDefault()} onClick={() => editor.chain().focus().insertContent(e).run()}>{e}</button>
+            ))}
+          </div>
         </div>
       )}
 

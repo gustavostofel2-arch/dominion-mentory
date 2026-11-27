@@ -515,3 +515,25 @@ a.notif-item:hover{background:var(--surface-2)}
 .emo-grade{display:flex;flex-wrap:wrap;gap:6px;padding:8px;margin-top:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
 .emo-grade button{background:transparent;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:1.1rem;cursor:pointer;min-width:40px;min-height:40px}
 .emo-grade button:hover{border-color:var(--accent)}
+.emo-painel{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-top:6px;overflow:hidden}
+.editor .emo-painel{margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0}
+.emo-abas{display:flex;gap:4px;padding:6px 8px;border-bottom:1px solid var(--line);overflow-x:auto}
+.emo-abas button{background:transparent;border:1px solid transparent;border-radius:8px;padding:4px 10px;font-size:1.05rem;cursor:pointer}
+.emo-abas button.on{border-color:var(--accent);background:var(--accent-soft)}
+.emo-painel .emo-grade{border:0;margin:0;max-height:168px;overflow-y:auto;background:transparent}
+
+/* Agenda */
+.sec-t{font-size:.95rem;margin:26px 0 8px}
+.relogio{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0;background:var(--surface)}
+.relogio > div{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
+.relogio small{color:var(--muted);font-size:.8rem}
+.relogio .ponto{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.relogio.ok .ponto{background:#3ddc84;box-shadow:0 0 0 4px rgba(61,220,132,.15)}
+.relogio.ruim{border-color:var(--warn)}
+.relogio.ruim .ponto{background:var(--warn)}
+.st{display:inline-block;font:600 .68rem var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-style:normal}
+.st-pendente{background:var(--wait-soft);color:var(--wait)}
+.st-enviada{background:rgba(61,220,132,.14);color:#3ddc84}
+.st-falhou{background:var(--warn-soft);color:var(--warn)}
+.st-enviando{background:var(--accent-soft);color:var(--accent)}
+.erro-linha{color:#ffb69b !important}

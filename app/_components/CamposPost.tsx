@@ -3,6 +3,7 @@
 import { useState } from "react";
 import EditorTexto from "./EditorTexto";
 import UploadImagem from "./UploadImagem";
+import CampoEmoji from "./CampoEmoji";
 
 export type PostEditavel = {
   id: string;
@@ -13,6 +14,8 @@ export type PostEditavel = {
   fixado: boolean;
   publicado: boolean;
   avisoTipo: "info" | "importante" | "urgente" | null;
+  /** Se a publicação está agendada: data no formato do campo (horário de Brasília). */
+  agendadoPara?: string | null;
 };
 
 /** Campos da postagem, iguais ao criar (Admin) e ao editar (menu ⋯ no feed). */
@@ -23,10 +26,7 @@ export default function CamposPost({ post, retorno }: { post?: PostEditavel; ret
       {post && <input type="hidden" name="id" value={post.id} />}
       <input type="hidden" name="retorno" value={retorno} />
 
-      <div className="fld">
-        <label>Título</label>
-        <input type="text" name="titulo" required maxLength={160} defaultValue={post?.titulo} placeholder="Ex.: Nova aula: como escalar contas" />
-      </div>
+      <CampoEmoji nome="titulo" rotulo="Título" max={160} obrigatorio inicial={post?.titulo} placeholder="Ex.: 🔥 Nova aula: como escalar contas" />
 
       <div className="fld">
         <label>Texto</label>
@@ -79,6 +79,18 @@ export default function CamposPost({ post, retorno }: { post?: PostEditavel; ret
             <p className="dica full">Dica: se quiser a imagem no aviso, use o formato <b>Banner 16:9</b> acima.</p>
           </div>
         )}
+      </fieldset>
+
+      <fieldset className="opcoes">
+        <legend>Agendar publicação</legend>
+        <div className="fld">
+          <label>Publicar em (opcional, horário de Brasília)</label>
+          <input type="datetime-local" name="agendar_em" defaultValue={post?.agendadoPara ?? ""} />
+          <p className="dica">
+            Deixe vazio para publicar agora (ou guardar como rascunho). Com data e hora, a postagem fica guardada e é publicada sozinha no horário,
+            já com o aviso e a notificação que você marcou aqui. Acompanhe em <b>Admin → Agenda</b>.
+          </p>
+        </div>
       </fieldset>
 
       <label className="chk notificar">

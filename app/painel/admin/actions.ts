@@ -10,6 +10,7 @@ import { apagarImagem, enviarImagem } from "@/lib/storage";
 import { conteudoVazio, limparDoc, textoPuro } from "@/lib/doc";
 import { urlSegura } from "@/lib/blocos";
 import { notificarTodos } from "@/lib/notificar";
+import { lerQuando, processarAgenda, sincronizarAvisoDoPost } from "@/lib/agenda";
 import { emitir, type EventoTR } from "@/lib/tempo-real";
 
 const FERRAMENTAS = "/painel/admin/ferramentas";
@@ -441,41 +442,8 @@ function lerPost(form: FormData, volta: string) {
 
 type DadosPost = { id: string; titulo: string; corpo: string; publicado: boolean; imagem: string | null; formato: string | null };
 
-/** Cria, atualiza ou remove o aviso ligado a uma postagem (o aviso leva para a postagem). */
 async function sincronizarAviso(form: FormData, post: DadosPost): Promise<"criado" | "atualizado" | "removido" | "nenhum"> {
-  const db = supabaseAdmin();
-  const quer = marcado(form, "virar_aviso") && post.publicado;
-  const { data: atual } = await db.from("avisos").select("id").eq("post_id", post.id).maybeSingle();
-  if (!quer) {
-    if (atual) {
-      await db.from("avisos").delete().eq("post_id", post.id);
-      return "removido";
-    }
-    return "nenhum";
-  }
-  const tipoBruto = txt(form, "aviso_tipo", 12);
-  const dias = txt(form, "aviso_dias", 6);
-  const campos: Record<string, unknown> = {
-    titulo: post.titulo.slice(0, 140),
-    texto: textoPuro(post.corpo).slice(0, 200),
-    tipo: TIPOS_AVISO.includes(tipoBruto) ? tipoBruto : "importante",
-    link_url: `/painel/novidades/${post.id}`,
-    link_texto: "Ver postagem",
-    ativo: true,
-    imagem_url: post.formato === "banner" ? post.imagem : null,
-  };
-  if (dias !== "manter" || !atual) {
-    const n = Number(dias);
-    campos.expira_em = n > 0 ? new Date(Date.now() + n * 864e5).toISOString() : null;
-  }
-  if (atual) {
-    const { error } = await db.from("avisos").update(campos).eq("post_id", post.id);
-    if (error) throw error;
-    return "atualizado";
-  }
-  const { error } = await db.from("avisos").insert({ ...campos, post_id: post.id });
-  if (error) throw error;
-  return "criado";
+  return sincronizarAvisoDoPost({ quer: marcado(form, "virar_aviso"), tipo: txt(form, "aviso_tipo", 12), dias: txt(form, "aviso_dias", 6) }, post);
 }
 
 async function inserirPost(linha: Record<string, unknown>): Promise<string> {
@@ -526,11 +494,43 @@ async function depoisDePost(form: FormData, p: DadosPost & { novo: boolean }, em
   return msg;
 }
 
+/**
+ * Campo "Agendar publicação". Com data futura: a postagem fica como rascunho e a Agenda publica no horário
+ * (com aviso/notificação, se marcados). Sem data: cancela um agendamento antigo, se existir.
+ * Devolve a frase para a mensagem final, ou "" se não há agendamento.
+ */
+async function agendarPostagem(form: FormData, id: string, titulo: string, email: string, volta: string): Promise<string> {
+  const db = supabaseAdmin();
+  const bruto = String(form.get("agendar_em") ?? "").trim();
+  if (!bruto) {
+    await db.from("agenda").update({ status: "cancelada", concluido_em: new Date().toISOString(), resultado: "Agendamento retirado ao salvar." }).eq("post_id", id).eq("status", "pendente");
+    return "";
+  }
+  const q = lerQuando(bruto);
+  if ("erro" in q) voltar(volta, "erro", "Postagem salva como rascunho, mas o agendamento não foi feito: " + q.erro);
+  const opcoes = {
+    notificar: marcado(form, "notificar"),
+    virar_aviso: marcado(form, "virar_aviso"),
+    aviso_tipo: txt(form, "aviso_tipo", 12) || "importante",
+    aviso_dias: txt(form, "aviso_dias", 6) === "manter" ? "1" : txt(form, "aviso_dias", 6) || "1",
+  };
+  const { data: atual } = await db.from("agenda").select("id").eq("post_id", id).eq("status", "pendente").maybeSingle();
+  const linha = { tipo: "postagem", titulo, post_id: id, opcoes, enviar_em: q.iso, autor_email: email, texto: "", status: "pendente", erro: null };
+  const r = atual
+    ? await db.from("agenda").update(linha).eq("id", (atual as { id: string }).id)
+    : await db.from("agenda").insert(linha);
+  if (r.error) throw new Error(r.error.message);
+  revalidatePath(AGENDA);
+  return " Publicação agendada: acompanhe na aba Agenda.";
+}
+
 export async function criarPost(form: FormData) {
   const email = await exigirAdmin();
   const volta = retornoDe(form);
   const sessao = await sessaoLogada();
   const campos = lerPost(form, volta);
+  const agendando = !!String(form.get("agendar_em") ?? "").trim();
+  if (agendando) campos.publicado = false; // a Agenda publica no horário
   const imagem_url = await resolverImagem(form, "posts", volta, null);
   const formato = imagem_url ? campos.formato ?? "quadrada" : null;
   let id = "";
@@ -546,14 +546,24 @@ export async function criarPost(form: FormData) {
   } catch (e) {
     falhou(volta, e);
   }
-  const extra = await depoisDePost(
-    form,
-    { id, titulo: campos.titulo, corpo: campos.corpo, publicado: campos.publicado, imagem: imagem_url, formato, novo: true },
-    email,
-  );
+  let agendada = "";
+  if (agendando) {
+    try {
+      agendada = await agendarPostagem(form, id, campos.titulo, email, volta);
+    } catch (e) {
+      falhou(volta, e);
+    }
+  }
+  const extra = agendando
+    ? agendada
+    : await depoisDePost(
+        form,
+        { id, titulo: campos.titulo, corpo: campos.corpo, publicado: campos.publicado, imagem: imagem_url, formato, novo: true },
+        email,
+      );
   limpar(volta);
   revalidatePath("/painel/novidades");
-  voltar(volta, "ok", (campos.publicado ? "Postagem publicada." : "Rascunho salvo.") + extra);
+  voltar(volta, "ok", (agendando ? "Postagem guardada." : campos.publicado ? "Postagem publicada." : "Rascunho salvo.") + extra);
 }
 
 export async function salvarPost(form: FormData) {
@@ -561,6 +571,8 @@ export async function salvarPost(form: FormData) {
   const volta = retornoDe(form);
   const id = txt(form, "id", 40);
   const campos = lerPost(form, volta);
+  const agendando = !!String(form.get("agendar_em") ?? "").trim();
+  if (agendando) campos.publicado = false; // a Agenda publica no horário
   const imagem_url = await resolverImagem(form, "posts", volta, await imagemAtual("posts", id));
   const formato = imagem_url ? campos.formato ?? "quadrada" : null;
   try {
@@ -569,11 +581,19 @@ export async function salvarPost(form: FormData) {
   } catch (e) {
     falhou(volta, e);
   }
-  const extra = await depoisDePost(
-    form,
-    { id, titulo: campos.titulo, corpo: campos.corpo, publicado: campos.publicado, imagem: imagem_url, formato, novo: false },
-    email,
-  );
+  let agendada = "";
+  try {
+    agendada = await agendarPostagem(form, id, campos.titulo, email, volta);
+  } catch (e) {
+    falhou(volta, e);
+  }
+  const extra = agendando
+    ? agendada
+    : await depoisDePost(
+        form,
+        { id, titulo: campos.titulo, corpo: campos.corpo, publicado: campos.publicado, imagem: imagem_url, formato, novo: false },
+        email,
+      );
   limpar(volta);
   revalidatePath("/painel/novidades");
   revalidatePath(`/painel/novidades/${id}`);
@@ -651,6 +671,7 @@ export async function excluirPost(form: FormData) {
 // ---------------- Comunicado manual ----------------
 
 const NOTIFS = "/painel/admin/notificacoes";
+const AGENDA = "/painel/admin/agenda";
 
 export async function enviarComunicado(form: FormData) {
   const email = await exigirAdmin();
@@ -663,20 +684,19 @@ export async function enviarComunicado(form: FormData) {
   // agendada? (o campo vem do navegador no horário de Brasília, ex.: 2026-11-28T19:30)
   const quando = String(form.get("quando") ?? "").trim();
   if (quando) {
-    if (!/^d{4}-d{2}-d{2}Td{2}:d{2}$/.test(quando)) voltar(NOTIFS, "erro", "Confira a data e a hora do agendamento.");
-    const enviarEm = new Date(quando + ":00-03:00");
-    if (Number.isNaN(enviarEm.getTime())) voltar(NOTIFS, "erro", "Confira a data e a hora do agendamento.");
-    if (enviarEm.getTime() < Date.now() + 60_000) voltar(NOTIFS, "erro", "Escolha um horário futuro (ou deixe o campo vazio para enviar agora).");
+    const q = lerQuando(quando);
+    if ("erro" in q) voltar(NOTIFS, "erro", q.erro);
     try {
       const { error } = await supabaseAdmin()
-        .from("notificacoes_agendadas")
-        .insert({ titulo, texto, link: link ?? null, enviar_em: enviarEm.toISOString(), autor_email: email });
+        .from("agenda")
+        .insert({ tipo: "notificacao", titulo, texto, link: link ?? null, enviar_em: q.iso, autor_email: email });
       if (error) throw new Error(error.message);
     } catch (e) {
       falhou(NOTIFS, e);
     }
     limpar(NOTIFS);
-    voltar(NOTIFS, "ok", "Notificação agendada. Ela sai sozinha no horário escolhido.");
+    revalidatePath(AGENDA);
+    voltar(AGENDA, "ok", "Notificação agendada. Ela sai sozinha no horário escolhido; acompanhe aqui.");
   }
   let msg = "Notificação enviada no sino.";
   try {
@@ -695,16 +715,103 @@ export async function enviarComunicado(form: FormData) {
   voltar(NOTIFS, "ok", msg);
 }
 
-export async function cancelarAgendada(form: FormData) {
-  await exigirAdmin();
+// ---------------- Agenda ----------------
+
+function idAgenda(form: FormData): string {
   const id = String(form.get("id") ?? "");
-  if (!/^[0-9a-f-]{36}$/i.test(id)) voltar(NOTIFS, "erro", "Notificação não encontrada.");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) voltar(AGENDA, "erro", "Item não encontrado.");
+  return id;
+}
+
+/** Notificação agendada: edita título, texto, link e horário. */
+export async function editarAgendamento(form: FormData) {
+  await exigirAdmin();
+  const id = idAgenda(form);
+  const quando = lerQuando(String(form.get("quando") ?? ""));
+  if ("erro" in quando) voltar(AGENDA, "erro", quando.erro);
+  const campos: Record<string, unknown> = { enviar_em: quando.iso };
+  const tipo = txt(form, "tipo", 12);
+  if (tipo === "notificacao") {
+    const titulo = txt(form, "titulo", 120);
+    if (!titulo) voltar(AGENDA, "erro", "Escreva o título da notificação.");
+    const linkBruto = String(form.get("link") ?? "").trim();
+    const link = linkBruto ? urlOk(linkBruto) : null;
+    if (linkBruto && !link) voltar(AGENDA, "erro", "Confira o link (ex.: https://meet.google.com/… ou /painel/novidades).");
+    campos.titulo = titulo;
+    campos.texto = txt(form, "texto", 180);
+    campos.link = link;
+  }
   try {
-    const { error } = await supabaseAdmin().from("notificacoes_agendadas").delete().eq("id", id).eq("status", "pendente");
+    const { error } = await supabaseAdmin().from("agenda").update(campos).eq("id", id).eq("status", "pendente");
     if (error) throw new Error(error.message);
   } catch (e) {
-    falhou(NOTIFS, e);
+    falhou(AGENDA, e);
   }
-  limpar(NOTIFS);
-  voltar(NOTIFS, "ok", "Agendamento cancelado.");
+  revalidatePath(AGENDA);
+  voltar(AGENDA, "ok", "Agendamento atualizado.");
+}
+
+export async function cancelarAgendamento(form: FormData) {
+  await exigirAdmin();
+  const id = idAgenda(form);
+  try {
+    const { error } = await supabaseAdmin()
+      .from("agenda")
+      .update({ status: "cancelada", concluido_em: new Date().toISOString(), resultado: "Cancelada por você." })
+      .eq("id", id)
+      .eq("status", "pendente");
+    if (error) throw new Error(error.message);
+  } catch (e) {
+    falhou(AGENDA, e);
+  }
+  revalidatePath(AGENDA);
+  voltar(AGENDA, "ok", "Agendamento cancelado. Se era uma postagem, ela continua como rascunho.");
+}
+
+/** Envia na hora um item agendado (ou tenta de novo um que falhou). */
+export async function enviarAgoraAgendamento(form: FormData) {
+  await exigirAdmin();
+  const id = idAgenda(form);
+  let msg = "";
+  try {
+    const db = supabaseAdmin();
+    const { error } = await db
+      .from("agenda")
+      .update({ status: "pendente", enviar_em: new Date().toISOString(), erro: null })
+      .eq("id", id)
+      .in("status", ["pendente", "falhou"]);
+    if (error) throw new Error(error.message);
+    await processarAgenda(id);
+    const { data } = await db.from("agenda").select("status,resultado,erro").eq("id", id).maybeSingle();
+    const r = data as { status: string; resultado: string | null; erro: string | null } | null;
+    msg = r?.status === "enviada" ? `Enviado agora. ${r.resultado ?? ""} ${r.erro ?? ""}`.trim() : `Não foi possível enviar: ${r?.erro ?? "veja o histórico"}.`;
+  } catch (e) {
+    falhou(AGENDA, e);
+  }
+  voltar(AGENDA, msg.startsWith("Enviado") ? "ok" : "erro", msg);
+}
+
+/** Botão "Verificar agora": executa tudo que já passou da hora, sem esperar o relógio automático. */
+export async function verificarAgendaAgora() {
+  await exigirAdmin();
+  let msg = "";
+  try {
+    const r = await processarAgenda();
+    msg = r.processados ? `Verificado: ${r.enviadas} enviado(s), ${r.falhas} com falha.` : "Verificado: nada estava atrasado.";
+  } catch (e) {
+    falhou(AGENDA, e);
+  }
+  voltar(AGENDA, "ok", msg);
+}
+
+export async function apagarDoHistorico(form: FormData) {
+  await exigirAdmin();
+  const id = idAgenda(form);
+  try {
+    await supabaseAdmin().from("agenda").delete().eq("id", id).in("status", ["enviada", "falhou", "cancelada"]);
+  } catch (e) {
+    falhou(AGENDA, e);
+  }
+  revalidatePath(AGENDA);
+  voltar(AGENDA, "ok", "Removido do histórico.");
 }

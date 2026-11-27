@@ -8,6 +8,7 @@ const ABAS = [
   { href: "/painel/admin/avisos", label: "Avisos" },
   { href: "/painel/admin/posts", label: "Postagens" },
   { href: "/painel/admin/notificacoes", label: "Notificações" },
+  { href: "/painel/admin/agenda", label: "Agenda" },
   { href: "/painel/admin/ferramentas", label: "Módulos e ferramentas" },
 ];
 
