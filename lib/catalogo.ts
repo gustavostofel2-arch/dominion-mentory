@@ -177,25 +177,23 @@ export async function lerAvisosAdmin(): Promise<Aviso[]> {
   }
 }
 
-/** Avisos ativos e não vencidos, para o topo do painel. */
-export const carregarAvisos = unstable_cache(
+const avisosAtivos = unstable_cache(
   async (): Promise<Aviso[]> => {
     try {
-      const { data, error } = await supabaseAdmin()
-        .from("avisos")
-        .select("*")
-        .eq("ativo", true)
-        .order("criado_em", { ascending: false })
-        .limit(10);
+      const { data, error } = await supabaseAdmin().from("avisos").select("*").eq("ativo", true).order("criado_em", { ascending: false }).limit(20);
       if (error) throw error;
-      const agora = Date.now();
-      return ((data ?? []) as LinhaAviso[])
-        .filter((a) => !a.expira_em || new Date(a.expira_em).getTime() > agora)
-        .map(paraAviso);
+      return ((data ?? []) as LinhaAviso[]).map(paraAviso);
     } catch {
       return [];
     }
   },
-  ["avisos-v1"],
+  ["avisos-v2"],
   { tags: ["avisos"], revalidate: 60 },
 );
+
+/** Avisos ativos e não vencidos. A validade é conferida a cada acesso (fora do cache), então vencer vale na hora. */
+export async function carregarAvisos(): Promise<Aviso[]> {
+  const lista = await avisosAtivos();
+  const agora = Date.now();
+  return lista.filter((a) => !a.expiraEm || new Date(a.expiraEm).getTime() > agora).slice(0, 10);
+}

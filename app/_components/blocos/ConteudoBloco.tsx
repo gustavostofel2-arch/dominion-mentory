@@ -5,11 +5,12 @@ import type { Dados } from "@/lib/blocos";
 import { renderConteudo } from "@/lib/doc";
 import { carregarAvisos, carregarCatalogo } from "@/lib/catalogo";
 import { listarPosts } from "@/lib/feed";
-import { Saudacao } from "../Nome";
+import { SaudacaoBloco } from "../Nome";
 import { Icone } from "../Icone";
 import AvisosCarrossel from "../AvisosCarrossel";
 import GradeFerramentas from "../GradeFerramentas";
 import PostCard from "../PostCard";
+import NovaPostagem from "../NovaPostagem";
 import Corrida from "./Corrida";
 
 export type Ctx = { email: string | null; admin: boolean };
@@ -41,9 +42,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
     case "saudacao":
       return (
         <div className="wrap pg-head">
-          {d.etiqueta ? <span className="eyebrow">{s(d.etiqueta)}</span> : null}
-          <Saudacao />
-          {d.texto ? <p>{s(d.texto)}</p> : null}
+          <SaudacaoBloco etiqueta={s(d.etiqueta)} titulo={s(d.titulo)} texto={s(d.texto)} />
         </div>
       );
 
@@ -59,7 +58,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
 
     case "texto": {
       const corpo = s(d.corpo);
-      if (!corpo) return <BlocoVazio nome="Texto" />;
+      if (!corpo) return ctx.admin ? <BlocoVazio nome="Texto" /> : null;
       const estilo = s(d.estilo) || "normal";
       return (
         <section className="bloco">
@@ -74,7 +73,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
 
     case "imagem": {
       const url = s(d.imagem);
-      if (!url) return <BlocoVazio nome="Imagem" />;
+      if (!url) return ctx.admin ? <BlocoVazio nome="Imagem" /> : null;
       const figura = (
         <figure className={`bl-imagem ${d.largura === "media" ? "media" : ""}`}>
           <img src={url} alt={s(d.legenda)} loading="lazy" decoding="async" />
@@ -99,7 +98,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
           {d.botao_texto && d.botao_url ? <Lnk url={s(d.botao_url)} className="btn primary">{s(d.botao_texto)}</Lnk> : null}
         </div>
       );
-      if (!url && !corpo && !d.titulo) return <BlocoVazio nome="Imagem com texto" />;
+      if (!url && !corpo && !d.titulo) return ctx.admin ? <BlocoVazio nome="Imagem com texto" /> : null;
       return (
         <section className="bloco">
           <div className="wrap">
@@ -120,7 +119,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
 
     case "faq": {
       const itens = arr<{ pergunta: string; resposta: string; selo: string }>(d.itens);
-      if (!itens.length) return <BlocoVazio nome="Perguntas e respostas" />;
+      if (!itens.length) return ctx.admin ? <BlocoVazio nome="Perguntas e respostas" /> : null;
       return (
         <section className="bloco">
           <div className="wrap">
@@ -147,7 +146,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
 
     case "cartoes": {
       const itens = arr<{ icone: string; etiqueta: string; titulo: string; texto: string; url: string; botao: string }>(d.itens);
-      if (!itens.length) return <BlocoVazio nome="Cartões" />;
+      if (!itens.length) return ctx.admin ? <BlocoVazio nome="Cartões" /> : null;
       const colunas = ["1", "2", "3"].includes(s(d.colunas)) ? s(d.colunas) : "3";
       const destaque = d.estilo === "destaque";
       return (
@@ -187,7 +186,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
 
     case "botoes": {
       const itens = arr<{ texto: string; url: string; estilo: string }>(d.itens).filter((i) => i.texto && i.url);
-      if (!itens.length) return <BlocoVazio nome="Botões" />;
+      if (!itens.length) return ctx.admin ? <BlocoVazio nome="Botões" /> : null;
       return (
         <section className="bloco">
           <div className={`wrap bl-botoes${d.alinhamento === "centro" ? " centro" : ""}`}>
@@ -204,9 +203,9 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
       const alvo = s(d.modulo);
       const escolhidos = alvo && alvo !== "todos" ? modulos.filter((m) => m.id === alvo) : modulos;
       const mostrar = s(d.mostrar) || "tudo";
-      const destaques = mostrar === "modulos" ? [] : modulos.flatMap((m) => m.itens.filter((i) => i.destaque));
+      const destaques = mostrar === "modulos" ? [] : escolhidos.flatMap((m) => m.itens.filter((i) => i.destaque));
       const mods = mostrar === "destaques" ? [] : escolhidos;
-      if (!destaques.length && !mods.some((m) => m.itens.some((i) => !i.destaque))) return <BlocoVazio nome="Ferramentas" />;
+      if (!destaques.length && !mods.some((m) => m.itens.some((i) => !i.destaque))) return ctx.admin ? <BlocoVazio nome="Ferramentas" /> : null;
       return (
         <section className="bloco">
           <div className="wrap">
@@ -239,14 +238,14 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
             <Titulo titulo={s(d.titulo)} ver={{ texto: s(d.ver_todas_texto), url: s(d.ver_todas_url) }} />
             {ctx.admin && Number(d.limite) > 5 && (
               <div style={{ marginBottom: 18 }}>
-                <Link className="btn primary sm" href="/painel/admin/posts#novo">+ Nova postagem</Link>
+                <NovaPostagem />
               </div>
             )}
             {posts.length === 0 ? (
               <div className="vazio-card">
                 <b>Ainda não há postagens.</b>
                 <p>Assim que a equipe publicar uma novidade, ela aparece aqui.</p>
-                {ctx.admin && <Link className="btn primary sm" href="/painel/admin/posts#novo">Criar a primeira postagem</Link>}
+                {ctx.admin && <NovaPostagem rotulo="Criar a primeira postagem" />}
               </div>
             ) : (
               <div className="feed">

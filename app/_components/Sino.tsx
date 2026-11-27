@@ -6,12 +6,15 @@ import type { Notif } from "@/lib/notificar";
 import NotifItem from "./NotifItem";
 import AtivarPush from "./AtivarPush";
 import { Icone } from "./Icone";
+import { definirSom, liberarAudio, somLigado, tocarSom } from "@/lib/som";
 
 export default function Sino({ naoLidas, vapid }: { naoLidas: number; vapid: string | null }) {
   const [aberto, setAberto] = useState(false);
   const [n, setN] = useState(naoLidas);
   const [itens, setItens] = useState<Notif[] | null>(null);
   const caixa = useRef<HTMLDivElement>(null);
+  const [som, setSom] = useState(true);
+  useEffect(() => setSom(somLigado()), []);
 
   useEffect(() => setN(naoLidas), [naoLidas]);
 
@@ -64,6 +67,21 @@ export default function Sino({ naoLidas, vapid }: { naoLidas: number; vapid: str
             <a href="/painel/notificacoes">Ver todas →</a>
           </div>
           <AtivarPush vapid={vapid} compacto />
+          <div className="sp-opcoes">
+            <label className="chk">
+              <input
+                type="checkbox"
+                checked={som}
+                onChange={(e) => {
+                  setSom(e.target.checked);
+                  definirSom(e.target.checked);
+                }}
+              />
+              Som da Dominion
+            </label>
+            <button type="button" className="btn mini" onClick={() => { liberarAudio(); tocarSom(true); }}>▶ Ouvir</button>
+            <button type="button" className="btn mini" onClick={() => { setAberto(false); window.dispatchEvent(new CustomEvent("dm:abrir-guia")); }}>Como ativar no celular</button>
+          </div>
           <div className="sp-lista">
             {itens === null && <p className="sp-vazio">Carregando…</p>}
             {itens?.length === 0 && (

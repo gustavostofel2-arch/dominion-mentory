@@ -1,8 +1,6 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { sessaoLogada } from "@/lib/admin";
 import { buscarUsuario } from "@/lib/perfil";
-import { assinar, COOKIE_OK, OPCOES_COOKIE } from "@/lib/sessao";
 import FormUsuario from "./FormUsuario";
 import "./bem-vindo.css";
 
@@ -14,11 +12,7 @@ export default async function BemVindo() {
   // Se a pessoa já tem @ (cookie antigo), só atualiza o cookie e segue.
   if (!s.usuario) {
     const u = await buscarUsuario(s.email);
-    if (u) {
-      const jar = await cookies();
-      jar.set(COOKIE_OK, await assinar({ email: s.email, nome: s.nome, usuario: u }), OPCOES_COOKIE);
-      redirect("/painel");
-    }
+    if (u) redirect("/api/sessao"); // atualiza o cookie numa rota própria (aqui não pode gravar cookie)
   }
   const primeiro = (s.nome ?? "").trim().split(/\s+/)[0];
 

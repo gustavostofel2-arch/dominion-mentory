@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import CamposPost, { type PostEditavel } from "./CamposPost";
-import { salvarPost } from "../painel/admin/actions";
+import { criarPost, salvarPost } from "../painel/admin/actions";
 
 /** Janela de edição da postagem (abre pelo menu ⋯). No celular ocupa a tela toda. */
-export default function EditarPostModal({ post, retorno, aoFechar }: { post: PostEditavel; retorno: string; aoFechar: () => void }) {
+export default function EditarPostModal({ post, retorno, aoFechar }: { post?: PostEditavel; retorno: string; aoFechar: () => void }) {
   // Ao enviar, a janela some na hora, mas o formulário continua montado até a ação terminar.
   const [enviando, setEnviando] = useState(false);
 
@@ -36,16 +36,16 @@ export default function EditarPostModal({ post, retorno, aoFechar }: { post: Pos
       hidden={enviando}
       onMouseDown={(e) => e.target === e.currentTarget && aoFechar()}
     >
-      <div className="modal" role="dialog" aria-modal="true" aria-label="Editar postagem">
+      <div className="modal" role="dialog" aria-modal="true" aria-label={post ? "Editar postagem" : "Nova postagem"}>
         <header className="modal-topo">
-          <b>Editar postagem</b>
+          <b>{post ? "Editar postagem" : "Nova postagem"}</b>
           <button type="button" className="x" aria-label="Fechar" onClick={aoFechar}>×</button>
         </header>
-        <form action={salvarPost} className="modal-corpo" onSubmit={() => setEnviando(true)}>
+        <form action={post ? salvarPost : criarPost} className="modal-corpo" onSubmit={() => setEnviando(true)}>
           <CamposPost post={post} retorno={retorno} />
           <div className="modal-rodape">
             <button type="button" className="btn" onClick={aoFechar}>Cancelar</button>
-            <button type="submit" className="btn primary">Salvar alterações</button>
+            <button type="submit" className="btn primary">{post ? "Salvar alterações" : "Publicar"}</button>
           </div>
         </form>
       </div>

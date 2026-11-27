@@ -135,6 +135,7 @@ export const PAGINAS_PADRAO: PaginaPadrao[] = [
         tipo: "saudacao",
         dados: {
           etiqueta: "Painel do mentorado",
+          titulo: "Olá, {nome}",
           texto: "Avisos importantes no topo, as novidades da equipe logo abaixo e as ferramentas da mentoria a um toque.",
         },
       },

@@ -162,8 +162,15 @@ export async function carregarPainel(): Promise<Painel> {
   }
 }
 
+/** A página padrão embutida no código (usada se o banco ainda não devolveu a página). */
+export function paginaReserva(slug: string): Pagina | null {
+  return reserva().find((p) => p.slug === slug) ?? null;
+}
+
 export async function paginaPorSlug(slug: string): Promise<{ pagina: Pagina | null; doBanco: boolean }> {
-  const { paginas, doBanco } = await carregarPainel();
+  let { paginas, doBanco } = await carregarPainel();
+  // lista vazia logo depois da criação inicial: lê de novo direto do banco, sem cache
+  if (doBanco && paginas.length === 0) ({ paginas, doBanco } = await lerBanco());
   return { pagina: paginas.find((p) => p.slug === slug) ?? null, doBanco };
 }
 

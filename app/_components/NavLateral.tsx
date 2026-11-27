@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Icone } from "./Icone";
 
 export type ItemNav = { href: string; label: string; curto: string; icone: string; ativoEm?: "exato" | "prefixo"; soDesktop?: boolean };
@@ -16,7 +17,16 @@ export default function NavLateral({ itens }: { itens: ItemNav[] }) {
 
   useEffect(() => setAberto(false), [path]);
 
-  const ativa = (it: ItemNav) => (it.ativoEm === "exato" ? path === it.href : it.ativoEm === "prefixo" ? path.startsWith(it.href) : false);
+  useEffect(() => {
+    if (!aberto) return;
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setAberto(false);
+    document.addEventListener("keydown", esc);
+    return () => document.removeEventListener("keydown", esc);
+  }, [aberto]);
+
+  // "/painel/regras" não pode deixar "/painel/regras-2" ativa ao mesmo tempo: compara o trecho inteiro
+  const ativa = (it: ItemNav) =>
+    it.ativoEm === "exato" ? path === it.href : it.ativoEm === "prefixo" ? path === it.href || path.startsWith(it.href + "/") : false;
 
   const paraCelular = itens.filter((i) => !i.soDesktop);
   const comMais = paraCelular.length > MAX_CELULAR;
@@ -41,7 +51,7 @@ export default function NavLateral({ itens }: { itens: ItemNav[] }) {
           </Link>
         ))}
         {comMais && (
-          <button type="button" className={`mais-btn${extraAtivo ? " on" : ""}`} aria-expanded={aberto} onClick={() => setAberto((v) => !v)}>
+          <button type="button" className={`mais-btn${extraAtivo ? " on" : ""}`} aria-expanded={aberto} aria-haspopup="dialog" onClick={() => setAberto((v) => !v)}>
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <circle cx="5" cy="12" r="1.8" />
               <circle cx="12" cy="12" r="1.8" />
@@ -52,18 +62,22 @@ export default function NavLateral({ itens }: { itens: ItemNav[] }) {
         )}
       </nav>
 
-      {comMais && aberto && (
-        <div className="mais-fundo" role="presentation" onClick={() => setAberto(false)}>
-          <div className="mais-folha" role="dialog" aria-label="Mais páginas" onClick={(e) => e.stopPropagation()}>
-            {extras.map((it) => (
-              <Link key={it.href} href={it.href} className={ativa(it) ? "on" : undefined}>
-                <Icone nome={it.icone} />
-                <span>{it.label}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* em portal: dentro do menu fixo (com blur) o "fixed" ficava preso à barra e não cobria a tela */}
+      {comMais &&
+        aberto &&
+        createPortal(
+          <div className="mais-fundo" role="presentation" onClick={() => setAberto(false)}>
+            <div className="mais-folha" role="dialog" aria-label="Mais páginas" onClick={(e) => e.stopPropagation()}>
+              {extras.map((it) => (
+                <Link key={it.href} href={it.href} className={ativa(it) ? "on" : undefined}>
+                  <Icone nome={it.icone} />
+                  <span>{it.label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

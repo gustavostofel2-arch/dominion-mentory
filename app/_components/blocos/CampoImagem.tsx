@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
-import { ALVO, carregar, recortar, reduzir, type Formato } from "@/lib/recorte";
+import { ALVO, carregar, recortar, recortarCentral, reduzir, type Formato } from "@/lib/recorte";
 import type { FormatoImagem } from "@/lib/blocos";
 import { enviarImagemBloco } from "../../painel/paginas/actions";
 
@@ -13,7 +13,10 @@ const ROTULO: Record<FormatoImagem, string> = {
   original: "Original (sem recorte)",
 };
 
-/** Escolhe a imagem, enquadra (ou mantém o original), comprime e envia na hora ao Supabase Storage. */
+/**
+ * Escolhe a imagem e já enquadra no centro, comprime e envia ao Supabase Storage na hora.
+ * "Ajustar enquadramento" é opcional: serve para reposicionar e enviar de novo.
+ */
 export default function CampoImagem({
   valor,
   aoMudar,
@@ -25,6 +28,7 @@ export default function CampoImagem({
 }) {
   const [formato, setFormato] = useState<FormatoImagem>(formatos[0] ?? "original");
   const [fonte, setFonte] = useState<string | null>(null);
+  const [ajustando, setAjustando] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [giro, setGiro] = useState(0);
@@ -40,45 +44,61 @@ export default function CampoImagem({
     aoMudar(r.url);
   }
 
+  /** Gera o arquivo no formato escolhido (centralizado) e envia. */
+  async function processar(url: string, f: FormatoImagem) {
+    const arquivo = f === "original" ? await reduzir(url) : await recortarCentral(url, ALVO[f as Formato]);
+    await enviar(arquivo);
+  }
+
   async function escolher(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = "";
     if (!f) return;
     setErro("");
     const url = URL.createObjectURL(f);
+    setOcupado(true);
     try {
       await carregar(url);
-    } catch {
+      await processar(url, formato);
+      setFonte((antes) => {
+        if (antes) URL.revokeObjectURL(antes);
+        return url;
+      });
+      setAjustando(false);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setGiro(0);
+    } catch (x) {
       URL.revokeObjectURL(url);
-      setErro("Este navegador não abre esse formato (comum com HEIC). Salve como JPG e tente de novo.");
-      return;
+      const m = (x as Error).message;
+      setErro(m === "decode" ? "Este navegador não abre esse formato (comum com HEIC). Salve como JPG e tente de novo." : m || "Não foi possível enviar.");
+    } finally {
+      setOcupado(false);
     }
-    if (formato === "original") {
-      setOcupado(true);
-      try {
-        await enviar(await reduzir(url));
-      } catch (x) {
-        setErro((x as Error).message || "Não foi possível enviar.");
-      } finally {
-        URL.revokeObjectURL(url);
-        setOcupado(false);
-      }
-      return;
-    }
-    setFonte(url);
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
-    setGiro(0);
   }
 
-  async function aplicar() {
+  async function trocarFormato(novo: FormatoImagem) {
+    setFormato(novo);
+    if (!fonte) return;
+    setOcupado(true);
+    setErro("");
+    try {
+      await processar(fonte, novo);
+      setAjustando(false);
+    } catch (x) {
+      setErro((x as Error).message || "Não foi possível reenquadrar.");
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  async function guardarAjuste() {
     if (!fonte || !area || formato === "original") return;
     setOcupado(true);
     setErro("");
     try {
       await enviar(await recortar(fonte, area, giro, ALVO[formato as Formato]));
-      URL.revokeObjectURL(fonte);
-      setFonte(null);
+      setAjustando(false);
     } catch (x) {
       setErro((x as Error).message || "Não foi possível enviar.");
     } finally {
@@ -90,10 +110,15 @@ export default function CampoImagem({
 
   return (
     <div className="upl campo-img">
-      {valor && !fonte && (
+      {valor && !ajustando && (
         <div className="prev">
           <img src={valor} alt="Imagem atual" style={{ maxWidth: 260 }} />
-          <button type="button" className="btn danger mini" onClick={() => aoMudar("")}>Remover imagem</button>
+          <div style={{ display: "grid", gap: 8 }}>
+            {fonte && alvo && (
+              <button type="button" className="btn mini" onClick={() => setAjustando(true)}>Ajustar enquadramento</button>
+            )}
+            <button type="button" className="btn danger mini" onClick={() => aoMudar("")}>Remover imagem</button>
+          </div>
         </div>
       )}
 
@@ -101,12 +126,7 @@ export default function CampoImagem({
         {formatos.length > 1 && (
           <div className="fld">
             <label>Formato</label>
-            <select
-              value={formato}
-              onChange={(e) => {
-                setFormato(e.target.value as FormatoImagem);
-              }}
-            >
+            <select value={formato} onChange={(e) => trocarFormato(e.target.value as FormatoImagem)} disabled={ocupado}>
               {formatos.map((f) => <option key={f} value={f}>{ROTULO[f]}</option>)}
             </select>
           </div>
@@ -117,7 +137,9 @@ export default function CampoImagem({
         </div>
       </div>
 
-      {fonte && alvo && (
+      {ocupado && <p className="dica">Enviando a imagem…</p>}
+
+      {ajustando && fonte && alvo && (
         <div className="crop-box" role="dialog" aria-label="Enquadrar imagem">
           <div className="crop-area" style={{ aspectRatio: formato === "banner" ? "16 / 9" : "1 / 1" }}>
             <Cropper
@@ -143,15 +165,14 @@ export default function CampoImagem({
             <button type="button" className="btn mini" onClick={() => setGiro((g) => (g + 90) % 360)}>⟳ Girar</button>
           </div>
           <div className="acts">
-            <button type="button" className="btn primary mini" onClick={aplicar} disabled={ocupado}>
-              {ocupado ? "Enviando…" : "Aplicar e enviar"}
+            <button type="button" className="btn primary mini" onClick={guardarAjuste} disabled={ocupado}>
+              {ocupado ? "Enviando…" : "Guardar este enquadramento"}
             </button>
-            <button type="button" className="btn mini" onClick={() => { URL.revokeObjectURL(fonte); setFonte(null); }}>Cancelar</button>
+            <button type="button" className="btn mini" onClick={() => setAjustando(false)}>Fechar (mantém o anterior)</button>
           </div>
         </div>
       )}
 
-      {ocupado && !fonte && <p className="dica">Enviando a imagem…</p>}
       {erro && <p className="erro-in">{erro}</p>}
     </div>
   );

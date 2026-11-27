@@ -35,7 +35,7 @@ function Campos({ a }: { a?: Aviso }) {
       </div>
       <div className="fld">
         <label>Link do botão (opcional)</label>
-        <input type="url" name="link_url" maxLength={600} defaultValue={a?.linkUrl ?? ""} placeholder="https://..." />
+        <input type="text" inputMode="url" name="link_url" maxLength={600} defaultValue={a?.linkUrl ?? ""} placeholder="https://..." />
       </div>
       <div className="fld">
         <label>Texto do botão</label>
@@ -54,7 +54,9 @@ function Campos({ a }: { a?: Aviso }) {
   );
 }
 
-export default async function AdminAvisos({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
+export default async function AdminAvisos() {
+  // as mensagens (?ok= / ?erro=) são lidas no navegador pelo MensagemAdmin; a página não depende da URL
+  const searchParams = Promise.resolve({} as { ok?: string; erro?: string });
   const [{ ok, erro }, avisos] = await Promise.all([searchParams, lerAvisosAdmin()]);
   const agora = Date.now();
 

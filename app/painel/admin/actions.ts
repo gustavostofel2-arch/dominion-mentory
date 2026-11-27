@@ -2,11 +2,13 @@
 
 import { redirect } from "next/navigation";
 import { after } from "next/server";
+import { unstable_rethrow } from "next/navigation";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { exigirAdmin, sessaoLogada } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { apagarImagem, enviarImagem } from "@/lib/storage";
 import { conteudoVazio, limparDoc, textoPuro } from "@/lib/doc";
+import { urlSegura } from "@/lib/blocos";
 import { notificarTodos } from "@/lib/notificar";
 import { emitir, type EventoTR } from "@/lib/tempo-real";
 
@@ -23,9 +25,7 @@ function marcado(form: FormData, nome: string): boolean {
 
 /** Só aceita http(s) ou caminho interno. Barra "javascript:" e parecidos. */
 function urlOk(v: string): string | null {
-  if (/^https?:\/\/[^\s]+$/i.test(v)) return v;
-  if (v.startsWith("/") && !v.startsWith("//") && !/\s/.test(v)) return v;
-  return null;
+  return urlSegura(v) || null;
 }
 
 /** Manda o sinal em tempo real depois que a resposta já saiu (não atrasa o clique). */
@@ -59,11 +59,20 @@ function limpar(caminho: string) {
   revalidatePath(caminho);
 }
 
+/**
+ * Redirecionar para o MESMO endereço em que a pessoa já está faz o Next não trocar o conteúdo (a tela fica em branco).
+ * Por isso todo redirecionamento leva um carimbo único (_=), que o navegador remove em seguida.
+ */
+function carimbo(): string {
+  return Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+}
+
 function voltar(caminho: string, tipo: "ok" | "erro", msg: string): never {
-  redirect(`${caminho}?${tipo}=${encodeURIComponent(msg)}`);
+  redirect(`${caminho}?${tipo}=${encodeURIComponent(msg)}&_=${carimbo()}`);
 }
 
 function falhou(caminho: string, e: unknown): never {
+  unstable_rethrow(e); // um redirect lançado dentro de try não é erro: deixa passar
   const m = (e as { message?: string } | null)?.message ?? "";
   if (/does not exist|schema cache|could not find/i.test(m)) {
     voltar(
@@ -163,7 +172,7 @@ export async function moverModulo(form: FormData) {
     falhou(FERRAMENTAS, e);
   }
   limpar(FERRAMENTAS);
-  redirect(FERRAMENTAS);
+  redirect(`${FERRAMENTAS}?_=${carimbo()}`);
 }
 
 // ---------------- Ferramentas ----------------
@@ -180,11 +189,11 @@ type CamposItem = {
 };
 
 function lerItem(form: FormData): CamposItem {
-  const url = urlOk(txt(form, "url", 600));
+  const url = urlOk(String(form.get("url") ?? ""));
   const titulo = txt(form, "titulo", 120);
   const modulo_id = txt(form, "modulo_id", 40);
   if (!titulo) voltar(FERRAMENTAS, "erro", "Dê um nome à ferramenta.");
-  if (!url) voltar(FERRAMENTAS, "erro", "O link precisa começar com https://");
+  if (!url) voltar(FERRAMENTAS, "erro", "Confira o link (ex.: https://site.com ou /painel/novidades).");
   if (!modulo_id) voltar(FERRAMENTAS, "erro", "Escolha o módulo.");
   return {
     modulo_id,
@@ -249,7 +258,7 @@ export async function moverItem(form: FormData) {
     falhou(FERRAMENTAS, e);
   }
   limpar(FERRAMENTAS);
-  redirect(FERRAMENTAS);
+  redirect(`${FERRAMENTAS}?_=${carimbo()}`);
 }
 
 // ---------------- Avisos ----------------
@@ -267,9 +276,9 @@ function lerExpira(form: FormData): string | null {
 function lerAviso(form: FormData) {
   const titulo = txt(form, "titulo", 140);
   if (!titulo) voltar(AVISOS, "erro", "Escreva o título do aviso.");
-  const linkBruto = txt(form, "link_url", 600);
+  const linkBruto = String(form.get("link_url") ?? "").trim();
   const link_url = linkBruto ? urlOk(linkBruto) : null;
-  if (linkBruto && !link_url) voltar(AVISOS, "erro", "O link do botão precisa começar com https://");
+  if (linkBruto && !link_url) voltar(AVISOS, "erro", "Confira o link do botão (ex.: https://site.com ou /painel/novidades).");
   const tipo = txt(form, "tipo", 12);
   return {
     titulo,
@@ -288,15 +297,16 @@ async function resolverImagem(
   pasta: "posts" | "avisos",
   caminho: string,
   atual: string | null,
+  apagarAntiga = true,
 ): Promise<string | null> {
   try {
     const nova = await enviarImagem(form.get("imagem"), pasta);
     if (nova) {
-      await apagarImagem(atual);
+      if (apagarAntiga) await apagarImagem(atual);
       return nova;
     }
     if (marcado(form, "remover_imagem")) {
-      await apagarImagem(atual);
+      if (apagarAntiga) await apagarImagem(atual);
       return null;
     }
     return atual;
@@ -305,6 +315,12 @@ async function resolverImagem(
     if (/bucket not found/i.test(m)) voltar(caminho, "erro", "A pasta de imagens ainda não existe. Rode o arquivo supabase/comunidade-etapa2.sql.");
     voltar(caminho, "erro", m && m.length < 120 ? m : "Não foi possível enviar a imagem.");
   }
+}
+
+/** O aviso nasceu de uma postagem? Então a imagem é da postagem e nunca deve ser apagada junto. */
+async function avisoLigadoAPost(id: string): Promise<boolean> {
+  const { data } = await supabaseAdmin().from("avisos").select("post_id").eq("id", id).maybeSingle();
+  return !!(data as { post_id?: string | null } | null)?.post_id;
 }
 
 async function imagemAtual(tabela: "posts" | "avisos", id: string): Promise<string | null> {
@@ -335,14 +351,14 @@ export async function criarAviso(form: FormData) {
     : "";
   if (campos.ativo && !extra) emitirDepois({ t: "aviso" });
   limpar(AVISOS);
-  voltar(AVISOS, "ok", "Aviso publicado no carrossel do Início." + extra);
+  voltar(AVISOS, "ok", (campos.ativo ? "Aviso publicado no carrossel do Início." : "Aviso salvo, mas está DESLIGADO: os alunos não veem.") + extra);
 }
 
 export async function salvarAviso(form: FormData) {
   const email = await exigirAdmin();
   const id = txt(form, "id", 40);
   const campos = lerAviso(form);
-  const imagem_url = await resolverImagem(form, "avisos", AVISOS, await imagemAtual("avisos", id));
+  const imagem_url = await resolverImagem(form, "avisos", AVISOS, await imagemAtual("avisos", id), !(await avisoLigadoAPost(id)));
   try {
     const { error } = await supabaseAdmin().from("avisos").update({ ...campos, imagem_url }).eq("id", id);
     if (error) throw error;
@@ -369,7 +385,7 @@ export async function excluirAviso(form: FormData) {
   await exigirAdmin();
   const id = txt(form, "id", 40);
   try {
-    await apagarImagem(await imagemAtual("avisos", id));
+    if (!(await avisoLigadoAPost(id))) await apagarImagem(await imagemAtual("avisos", id));
     const { error } = await supabaseAdmin().from("avisos").delete().eq("id", id);
     if (error) throw error;
   } catch (e) {
@@ -619,6 +635,7 @@ export async function excluirPost(form: FormData) {
   const id = txt(form, "id", 40);
   try {
     await apagarImagem(await imagemAtual("posts", id));
+    await supabaseAdmin().from("notificacoes").delete().eq("ref_id", id);
     const { error } = await supabaseAdmin().from("posts").delete().eq("id", id);
     if (error) throw error;
   } catch (e) {
@@ -639,10 +656,10 @@ export async function enviarComunicado(form: FormData) {
   const email = await exigirAdmin();
   const titulo = txt(form, "titulo", 120);
   const texto = txt(form, "texto", 180);
-  const linkBruto = txt(form, "link", 600);
+  const linkBruto = String(form.get("link") ?? "").trim();
   const link = linkBruto ? urlOk(linkBruto) : null;
   if (!titulo) voltar(NOTIFS, "erro", "Escreva o título da notificação.");
-  if (linkBruto && !link) voltar(NOTIFS, "erro", "O link precisa começar com https:// ou / (página do painel).");
+  if (linkBruto && !link) voltar(NOTIFS, "erro", "Confira o link (ex.: https://site.com ou /painel/novidades).");
   let msg = "Notificação enviada no sino.";
   try {
     const r = await notificarTodos({ tipo: "manual", titulo, texto, link: link ?? "/painel", autorEmail: email });

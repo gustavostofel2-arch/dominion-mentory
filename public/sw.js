@@ -16,6 +16,7 @@ self.addEventListener("push", (event) => {
     badge: "/icons/badge-96.png",
     lang: "pt-BR",
     timestamp: Date.now(),
+    vibrate: [160, 80, 160, 80, 320],
     data: { url: d.link || "/painel" },
   };
   if (d.imagem) opcoes.image = d.imagem;
@@ -23,7 +24,11 @@ self.addEventListener("push", (event) => {
     opcoes.tag = d.tag;
     opcoes.renotify = true;
   }
-  event.waitUntil(self.registration.showNotification(titulo, opcoes));
+  // Se o app estiver aberto, avisa a página para tocar o som da Dominion (o som do sistema não dá para trocar).
+  const avisarPaginas = self.clients
+    .matchAll({ type: "window", includeUncontrolled: true })
+    .then((janelas) => janelas.forEach((j) => j.postMessage({ tipo: "dm-push", titulo })));
+  event.waitUntil(Promise.all([self.registration.showNotification(titulo, opcoes), avisarPaginas]));
 });
 
 self.addEventListener("notificationclick", (event) => {

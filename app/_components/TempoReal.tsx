@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
-import { Icone } from "./Icone";
+import { liberarAudio, tocarSom } from "@/lib/som";
+import { mostrarToast } from "@/lib/toast";
 
 type Evento = { t: "post" | "aviso" | "notificacao" | "comentario" | "curtida" | "atualizou"; postId?: string };
-type Toast = { id: number; texto: string; link: string; icone: string };
 
 const MENSAGEM: Record<string, { texto: string; link: string; icone: string }> = {
   post: { texto: "Nova postagem em Novidades", link: "/painel/novidades", icone: "news" },
@@ -20,11 +20,27 @@ export default function TempoReal({ url, chave }: { url: string | null; chave: s
   const caminho = useRef("");
   const pathname = usePathname();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [toasts, setToasts] = useState<Toast[]>([]);
 
   useEffect(() => {
     caminho.current = pathname;
   }, [pathname]);
+
+  // áudio só é liberado pelo navegador depois de um toque da pessoa
+  useEffect(() => {
+    const liberar = () => liberarAudio();
+    window.addEventListener("pointerdown", liberar, { once: true });
+    window.addEventListener("keydown", liberar, { once: true });
+    // push chegando com o app aberto: toca o som da Dominion
+    const doSW = (ev: MessageEvent) => {
+      if (ev.data?.tipo === "dm-push" && !document.hidden) tocarSom();
+    };
+    navigator.serviceWorker?.addEventListener("message", doSW);
+    return () => {
+      window.removeEventListener("pointerdown", liberar);
+      window.removeEventListener("keydown", liberar);
+      navigator.serviceWorker?.removeEventListener("message", doSW);
+    };
+  }, []);
 
   useEffect(() => {
     if (!url || !chave) return;
@@ -43,10 +59,8 @@ export default function TempoReal({ url, chave }: { url: string | null; chave: s
         const naComunidade = caminho.current.startsWith("/painel/novidades") || caminho.current === "/painel";
         if (e.t === "post" || e.t === "aviso" || e.t === "notificacao") {
           atualizar(500);
-          const m = MENSAGEM[e.t];
-          const id = Date.now() + Math.random();
-          setToasts((t) => [...t.slice(-2), { id, ...m }]);
-          setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 7000);
+          if (!document.hidden) tocarSom();
+          mostrarToast({ ...MENSAGEM[e.t], sub: "Toque para ver" });
           if (e.t === "notificacao") window.dispatchEvent(new CustomEvent("dm:nova-notificacao"));
         } else if (e.t === "atualizou" && caminho.current.startsWith("/painel")) {
           atualizar(600);
@@ -64,20 +78,5 @@ export default function TempoReal({ url, chave }: { url: string | null; chave: s
     };
   }, [url, chave, router]);
 
-  if (!toasts.length) return null;
-  return (
-    <div className="toasts" role="status" aria-live="polite">
-      {toasts.map((t) => (
-        <a
-          key={t.id}
-          className="toast"
-          href={t.link}
-          onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}
-        >
-          <span className="toast-ic"><Icone nome={t.icone} /></span>
-          <span className="toast-tx"><b>{t.texto}</b><small>Toque para ver</small></span>
-        </a>
-      ))}
-    </div>
-  );
+  return null;
 }

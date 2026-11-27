@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { carregarCatalogo } from "@/lib/catalogo";
 import { emailLogado, ehAdminParaMenu } from "@/lib/admin";
-import { paginaPorSlug } from "@/lib/paginas";
+import { paginaPorSlug, paginaReserva } from "@/lib/paginas";
 import { alternarEdicao } from "../../painel/paginas/actions";
 import { COOKIE_EDICAO } from "@/lib/edicao";
 import Cabecalho from "../Cabecalho";
@@ -19,7 +19,10 @@ export function caminhoDaPagina(slug: string) {
 /** Desenha uma página do painel (menu dinâmico): cabeçalho + blocos, com o modo edição para admins. */
 export default async function PaginaView({ slug }: { slug: string }) {
   const email = await emailLogado();
-  const [{ pagina, doBanco }, admin] = await Promise.all([paginaPorSlug(slug), ehAdminParaMenu(email)]);
+  const [achada, admin] = await Promise.all([paginaPorSlug(slug), ehAdminParaMenu(email)]);
+  const { doBanco } = achada;
+  // o Início nunca dá 404: se o banco não devolveu a página, usa a padrão embutida
+  const pagina = achada.pagina ?? (slug === "inicio" ? paginaReserva("inicio") : null);
   if (!pagina || (!pagina.visivel && !admin)) notFound();
 
   const retorno = caminhoDaPagina(pagina.slug);

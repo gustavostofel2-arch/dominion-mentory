@@ -8,7 +8,9 @@ import Busca, { type EntradaBusca } from "../_components/Busca";
 import Sino from "../_components/Sino";
 import CriarMenu from "../_components/CriarMenu";
 import TempoReal from "../_components/TempoReal";
+import GuiaCelular from "../_components/GuiaCelular";
 import MensagemUrl from "../_components/MensagemUrl";
+import Toasts from "../_components/Toasts";
 import { carregarCatalogo } from "@/lib/catalogo";
 import { emailLogado, ehAdminParaMenu } from "@/lib/admin";
 import { titulosParaBusca } from "@/lib/feed";
@@ -96,6 +98,8 @@ export default async function PainelLayout({ children }: { children: React.React
         </header>
         {children}
       </div>
+      <Toasts />
+      <GuiaCelular vapid={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
       <TempoReal url={process.env.NEXT_PUBLIC_SUPABASE_URL ?? null} chave={process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? null} />
       <Suspense fallback={null}>
         <MensagemUrl />

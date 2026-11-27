@@ -56,10 +56,14 @@ export const BLOCOS: Record<TipoBloco, DefBloco> = {
   saudacao: {
     tipo: "saudacao",
     nome: "Saudação",
-    descricao: "“Olá, [nome]” com uma frase de boas-vindas.",
+    descricao: "Um título grande que chama a pessoa pelo nome. Escreva {nome} onde o primeiro nome dela deve aparecer.",
     icone: "home",
-    campos: [T("etiqueta", "Texto pequeno", { max: 60 }), A("texto", "Frase de boas-vindas", { max: 300 })],
-    padrao: { etiqueta: "Painel do mentorado", texto: "Bem-vindo! Aqui está tudo da mentoria em um lugar só." },
+    campos: [
+      T("etiqueta", "Texto pequeno acima (opcional)", { max: 80 }),
+      T("titulo", "Título", { max: 120, placeholder: "Olá, {nome}", dica: "Use {nome} (ou [nome]) para mostrar o primeiro nome de quem está vendo. Ex.: Olá, {nome}. Bem-vindo!" }),
+      A("texto", "Frase abaixo (opcional)", { max: 300 }),
+    ],
+    padrao: { etiqueta: "", titulo: "Olá, {nome}", texto: "" },
   },
   titulo: {
     tipo: "titulo",
@@ -283,9 +287,15 @@ export const ehTipo = (t: unknown): t is TipoBloco => typeof t === "string" && t
 const URL_HTTP = /^https?:\/\/[^\s]+$/i;
 
 export function urlSegura(v: unknown): string {
-  const s = typeof v === "string" ? v.trim().slice(0, 700) : "";
+  const s = typeof v === "string" ? v.trim() : "";
+  if (!s || s.length > 700 || /[\s\u0000]/.test(s)) return "";
   if (URL_HTTP.test(s)) return s;
-  if (s.startsWith("/") && !s.startsWith("//") && !/\s/.test(s)) return s;
+  // caminho do próprio painel (sem "//" nem "..")
+  if (s.startsWith("/") && !s.startsWith("//") && !s.split("/").includes("..")) return s;
+  // qualquer outro esquema (javascript:, data:, mailto:, localhost:3000...) é descartado
+  if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return "";
+  // "google.com/abc" digitado sem https://: completa sozinho
+  if (/^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?([/?#]\S*)?$/i.test(s)) return "https://" + s;
   return "";
 }
 
@@ -351,7 +361,13 @@ function limpaObjeto(campos: Campo[], bruto: unknown, prof: number): Dados {
 
 /** Valida e limpa os dados de um bloco, descartando qualquer campo fora do esquema. */
 export function normalizarDados(tipo: TipoBloco, bruto: unknown): Dados {
-  return limpaObjeto(BLOCOS[tipo].campos, bruto, 0);
+  const d = limpaObjeto(BLOCOS[tipo].campos, bruto, 0);
+  // itens sem o campo principal viravam linhas em branco para o aluno: descarta
+  const filtrar = (lista: unknown, campo: string) => (Array.isArray(lista) ? (lista as Dados[]).filter((i) => typeof i[campo] === "string" && i[campo]) : []);
+  if (tipo === "faq") d.itens = filtrar(d.itens, "pergunta");
+  if (tipo === "cartoes") d.itens = filtrar(d.itens, "titulo");
+  if (tipo === "botoes") d.itens = filtrar(d.itens, "texto");
+  return d;
 }
 
 /** Dados de um bloco já salvo, completados com os padrões (blocos antigos sem algum campo novo). */

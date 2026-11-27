@@ -31,18 +31,21 @@ export async function criarPerfil(_antes: EstadoPerfil, form: FormData): Promise
   const v = validarUsuario(String(form.get("usuario") ?? ""));
   if (!v.ok) return { erro: v.erro };
 
+  let usuarioFinal = v.usuario;
   const { error } = await supabaseAdmin().from("perfis").insert({ email: s.email, usuario: v.usuario });
   if (error) {
     if (error.code === "23505") {
-      // ou o @ já existe, ou a pessoa já tinha criado o dela em outro aparelho
+      // ou o @ já é de outra pessoa, ou esta pessoa já criou o dela em outro aparelho
       const { data } = await supabaseAdmin().from("perfis").select("usuario").eq("email", s.email).maybeSingle();
       if (!data) return { erro: "Esse @ já está em uso. Escolha outro." };
+      // o @ que vale é SEMPRE o que está salvo no banco, nunca o que foi digitado agora
+      usuarioFinal = (data as { usuario: string }).usuario;
     } else {
       return { erro: "Não foi possível salvar agora. Tente de novo." };
     }
   }
 
   const jar = await cookies();
-  jar.set(COOKIE_OK, await assinar({ email: s.email, nome: s.nome, usuario: v.usuario }), OPCOES_COOKIE);
+  jar.set(COOKIE_OK, await assinar({ email: s.email, nome: s.nome, usuario: usuarioFinal }), OPCOES_COOKIE);
   redirect("/painel");
 }

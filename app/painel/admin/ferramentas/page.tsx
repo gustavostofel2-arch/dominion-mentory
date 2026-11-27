@@ -11,6 +11,7 @@ import {
   salvarModulo,
 } from "../actions";
 import ConfirmButton from "../ConfirmButton";
+import BotaoAcao from "../BotaoAcao";
 
 const CORES = [
   ["op", "Dourado"],
@@ -32,7 +33,7 @@ function CamposItem({ modulos, item, moduloId }: { modulos: Modulo[]; item?: Ite
       </div>
       <div className="fld full">
         <label>Link do artefato ou site</label>
-        <input type="url" name="url" required maxLength={600} defaultValue={item?.url} placeholder="https://claude.ai/artifact/..." />
+        <input type="text" inputMode="url" name="url" required maxLength={600} defaultValue={item?.url} placeholder="https://claude.ai/artifact/..." />
       </div>
       <div className="fld">
         <label>Etiqueta (ex.: Guia, Prompts, Aula)</label>
@@ -64,7 +65,9 @@ function CamposItem({ modulos, item, moduloId }: { modulos: Modulo[]; item?: Ite
   );
 }
 
-export default async function AdminFerramentas({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
+export default async function AdminFerramentas() {
+  // as mensagens (?ok= / ?erro=) são lidas no navegador pelo MensagemAdmin; a página não depende da URL
+  const searchParams = Promise.resolve({} as { ok?: string; erro?: string });
   const [{ ok, erro }, { modulos, doBanco }] = await Promise.all([searchParams, lerCatalogoCompleto()]);
 
   return (
@@ -123,8 +126,8 @@ export default async function AdminFerramentas({ searchParams }: { searchParams:
                   </div>
                   <div className="acts">
                     <button className="btn primary mini" type="submit" formAction={salvarModulo}>Salvar módulo</button>
-                    <button className="btn mini" type="submit" name="dir" value="up" formAction={moverModulo} formNoValidate disabled={mi === 0}>↑ Subir</button>
-                    <button className="btn mini" type="submit" name="dir" value="down" formAction={moverModulo} formNoValidate disabled={mi === modulos.length - 1}>↓ Descer</button>
+                    <BotaoAcao action={moverModulo} campos={{ dir: "up" }} className="btn mini" disabled={mi === 0}>↑ Subir</BotaoAcao>
+                    <BotaoAcao action={moverModulo} campos={{ dir: "down" }} className="btn mini" disabled={mi === modulos.length - 1}>↓ Descer</BotaoAcao>
                     <ConfirmButton action={excluirModulo} msg={`Excluir o módulo “${m.titulo}” e TODAS as ferramentas dele?`} className="btn danger mini">Excluir módulo</ConfirmButton>
                   </div>
                 </form>
@@ -144,8 +147,8 @@ export default async function AdminFerramentas({ searchParams }: { searchParams:
                     <CamposItem modulos={modulos} item={it} />
                     <div className="acts">
                       <button className="btn primary mini" type="submit" formAction={salvarItem}>Salvar</button>
-                      <button className="btn mini" type="submit" name="dir" value="up" formAction={moverItem} formNoValidate disabled={ii === 0}>↑ Subir</button>
-                      <button className="btn mini" type="submit" name="dir" value="down" formAction={moverItem} formNoValidate disabled={ii === m.itens.length - 1}>↓ Descer</button>
+                      <BotaoAcao action={moverItem} campos={{ dir: "up" }} className="btn mini" disabled={ii === 0}>↑ Subir</BotaoAcao>
+                      <BotaoAcao action={moverItem} campos={{ dir: "down" }} className="btn mini" disabled={ii === m.itens.length - 1}>↓ Descer</BotaoAcao>
                       <a className="btn mini" href={it.url} target="_blank" rel="noopener noreferrer">Testar link</a>
                       <ConfirmButton action={excluirItem} msg={`Excluir “${it.titulo}”?`} className="btn danger mini">Excluir</ConfirmButton>
                     </div>

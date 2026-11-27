@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
-import { ALVO, carregar, recortar, type Formato } from "@/lib/recorte";
+import { ALVO, carregar, recortar, recortarCentral, type Formato } from "@/lib/recorte";
 
+/**
+ * Imagem da postagem ou do aviso. Assim que a pessoa escolhe o arquivo, ele já é enquadrado no centro,
+ * comprimido e anexado ao formulário (nada se perde se ela publicar direto). "Ajustar enquadramento" é opcional.
+ */
 export default function UploadImagem({
   atual,
   formatoAtual,
@@ -15,6 +19,7 @@ export default function UploadImagem({
 }) {
   const [formato, setFormato] = useState<Formato>(formatoFixo ?? ((formatoAtual as Formato) || "quadrada"));
   const [fonte, setFonte] = useState<string | null>(null); // imagem original escolhida
+  const [nome, setNome] = useState("");
   const [cortando, setCortando] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -23,8 +28,8 @@ export default function UploadImagem({
   const [previa, setPrevia] = useState<string | null>(null);
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
-  const entrada = useRef<HTMLInputElement>(null);
   const alvoFile = useRef<HTMLInputElement>(null);
+  const reenviando = useRef(false);
 
   const alvo = ALVO[formato];
 
@@ -35,8 +40,21 @@ export default function UploadImagem({
     [fonte],
   );
 
-  function escolher(e: React.ChangeEvent<HTMLInputElement>) {
+  /** Coloca o arquivo pronto no campo escondido (é ele que vai junto com o formulário). */
+  const anexar = useCallback((arquivo: File) => {
+    if (!alvoFile.current) return;
+    const dt = new DataTransfer();
+    dt.items.add(arquivo);
+    alvoFile.current.files = dt.files;
+    setPrevia((antes) => {
+      if (antes) URL.revokeObjectURL(antes);
+      return URL.createObjectURL(arquivo);
+    });
+  }, []);
+
+  async function escolher(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
+    e.target.value = "";
     if (!f) return;
     setErro("");
     if (!f.type.startsWith("image/") && !/\.(heic|heif|avif|bmp|gif|tiff?|svg)$/i.test(f.name)) {
@@ -44,49 +62,82 @@ export default function UploadImagem({
       return;
     }
     const url = URL.createObjectURL(f);
-    // confere se o navegador consegue abrir esse formato antes de mostrar o recorte
-    carregar(url)
-      .then(() => {
-        setFonte(url);
-        setCrop({ x: 0, y: 0 });
-        setZoom(1);
-        setGiro(0);
-        setCortando(true);
-      })
-      .catch(() => {
-        URL.revokeObjectURL(url);
-        setErro("Este navegador não consegue abrir esse formato (comum com HEIC). Tire um print ou salve como JPG e tente de novo.");
-      });
-    e.target.value = "";
+    setOcupado(true);
+    try {
+      await carregar(url); // confere se o navegador abre esse formato
+      anexar(await recortarCentral(url, alvo));
+      setFonte(url);
+      setNome(f.name);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setGiro(0);
+      setCortando(false);
+    } catch {
+      URL.revokeObjectURL(url);
+      setErro("Este navegador não consegue abrir esse formato (comum com HEIC). Salve como JPG ou tire um print e tente de novo.");
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  // trocou o formato: reenquadra a mesma imagem no novo formato
+  async function trocarFormato(novo: Formato) {
+    setFormato(novo);
+    if (!fonte) return;
+    setOcupado(true);
+    try {
+      anexar(await recortarCentral(fonte, ALVO[novo]));
+      setCortando(false);
+    } catch {
+      setErro("Não consegui reenquadrar a imagem. Escolha o arquivo de novo.");
+    } finally {
+      setOcupado(false);
+    }
   }
 
   const aoCompletar = useCallback((_: Area, px: Area) => setArea(px), []);
 
-  async function aplicar() {
-    if (!fonte || !area || !alvoFile.current) return;
+  const aplicar = useCallback(async () => {
+    if (!fonte || !area) return;
     setOcupado(true);
     setErro("");
     try {
-      const arquivo = await recortar(fonte, area, giro, alvo);
-      const dt = new DataTransfer();
-      dt.items.add(arquivo);
-      alvoFile.current.files = dt.files;
-      setPrevia((antes) => {
-        if (antes) URL.revokeObjectURL(antes);
-        return URL.createObjectURL(arquivo);
-      });
+      anexar(await recortar(fonte, area, giro, alvo));
       setCortando(false);
     } catch {
       setErro("Não consegui recortar essa imagem. Tente outra.");
     } finally {
       setOcupado(false);
     }
-  }
+  }, [fonte, area, giro, alvo, anexar]);
+
+  // se a pessoa publicar com o ajuste ainda aberto, aplica o ajuste antes de enviar
+  useEffect(() => {
+    const form = alvoFile.current?.form;
+    if (!form || !cortando) return;
+    const aoEnviar = (ev: SubmitEvent) => {
+      if (reenviando.current) return;
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      const quem = ev.submitter as HTMLElement | null;
+      aplicar().then(() => {
+        reenviando.current = true;
+        try {
+          form.requestSubmit(quem instanceof HTMLButtonElement || quem instanceof HTMLInputElement ? quem : undefined);
+        } finally {
+          reenviando.current = false;
+        }
+      });
+    };
+    form.addEventListener("submit", aoEnviar, true);
+    return () => form.removeEventListener("submit", aoEnviar, true);
+  }, [cortando, aplicar]);
 
   function remover() {
     if (alvoFile.current) alvoFile.current.value = "";
     setPrevia(null);
     setFonte(null);
+    setNome("");
     setCortando(false);
   }
 
@@ -98,14 +149,7 @@ export default function UploadImagem({
         {!formatoFixo && (
           <div className="fld">
             <label>Formato da imagem</label>
-            <select
-              name="formato"
-              value={formato}
-              onChange={(e) => {
-                setFormato(e.target.value as Formato);
-                if (fonte) setCortando(true); // a proporção mudou: enquadrar de novo
-              }}
-            >
+            <select name="formato" value={formato} onChange={(e) => trocarFormato(e.target.value as Formato)}>
               {(Object.keys(ALVO) as Formato[]).map((k) => (
                 <option key={k} value={k}>{ALVO[k].rotulo}</option>
               ))}
@@ -114,11 +158,16 @@ export default function UploadImagem({
         )}
         <div className="fld">
           <label>{formatoFixo ? "Banner 16:9 (opcional)" : "Imagem (opcional)"}</label>
-          <input ref={entrada} type="file" accept="image/*" onChange={escolher} />
-          {/* o arquivo recortado fica aqui e vai junto com o formulário */}
+          <input type="file" accept="image/*" onChange={escolher} disabled={ocupado} />
+          {/* o arquivo já enquadrado fica aqui e vai junto com o formulário */}
           <input ref={alvoFile} type="file" name="imagem" hidden />
         </div>
       </div>
+
+      {ocupado && <p className="dica">Preparando a imagem…</p>}
+      {!ocupado && previa && (
+        <p className="dica" style={{ color: "var(--ok)" }}>✓ Imagem pronta{nome ? `: ${nome}` : ""}. Ela será enviada ao publicar.</p>
+      )}
 
       {cortando && fonte && (
         <div className="crop-box" role="dialog" aria-label="Enquadrar imagem">
@@ -138,7 +187,7 @@ export default function UploadImagem({
               restrictPosition={false}
             />
           </div>
-          <p className="dica">Arraste para posicionar. Use o zoom para aproximar ou afastar. A área clara é o que será publicado.</p>
+          <p className="dica">Arraste para posicionar e use o zoom. A área clara é o que será publicado.</p>
           <div className="crop-ctl">
             <label>
               Zoom
@@ -149,9 +198,9 @@ export default function UploadImagem({
           </div>
           <div className="acts">
             <button type="button" className="btn primary mini" onClick={aplicar} disabled={ocupado}>
-              {ocupado ? "Preparando…" : "Aplicar enquadramento"}
+              {ocupado ? "Preparando…" : "Guardar este enquadramento"}
             </button>
-            <button type="button" className="btn mini" onClick={() => setCortando(false)}>Cancelar</button>
+            <button type="button" className="btn mini" onClick={() => setCortando(false)}>Fechar (mantém o anterior)</button>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { after } from "next/server";
 import { exigirAdmin } from "@/lib/admin";
@@ -30,7 +30,9 @@ function retornoDe(form: FormData, padrao = ADMIN_PAGINAS): string {
 }
 
 function ir(path: string, tipo: "ok" | "erro", msg: string, extra = ""): never {
-  const q = [extra, `${tipo}=${encodeURIComponent(msg)}`].filter(Boolean).join("&");
+  // o carimbo (_=) garante que o endereço seja sempre novo: redirecionar para o mesmo endereço deixava a tela em branco
+  const carimbo = Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+  const q = [extra, `${tipo}=${encodeURIComponent(msg)}`, `_=${carimbo}`].filter(Boolean).join("&");
   redirect(`${path}?${q}`);
 }
 
@@ -60,6 +62,7 @@ function limparTudo() {
 }
 
 function falhou(path: string, e: unknown): never {
+  unstable_rethrow(e); // um redirect lançado dentro de try não é erro: deixa passar
   const m = (e as { message?: string } | null)?.message ?? "";
   if (/does not exist|schema cache|could not find|relation/i.test(m)) {
     ir(path, "erro", "As tabelas de páginas ainda não existem no Supabase. Rode o arquivo supabase/comunidade-etapa5.sql no SQL Editor.");
@@ -293,13 +296,19 @@ export async function criarPagina(form: FormData) {
     slug = await slugLivre(slugify(txt(form, "slug", 60) || titulo));
     const { data: ult } = await db.from("paginas").select("ordem").order("ordem", { ascending: false }).limit(1);
     const ordem = ((ult?.[0] as { ordem?: number } | undefined)?.ordem ?? 0) + 10;
-    const { data, error } = await db
-      .from("paginas")
-      .insert({ slug, titulo, icone: iconeOk(txt(form, "icone", 20)), ordem, etiqueta: null, descricao: null })
-      .select("id")
-      .single();
-    if (error) throw error;
-    const id = (data as { id: string }).id;
+    let criada: { id: string } | null = null;
+    for (let tentativa = 0; tentativa < 5 && !criada; tentativa++) {
+      const r = await db
+        .from("paginas")
+        .insert({ slug, titulo, icone: iconeOk(txt(form, "icone", 20)), ordem, etiqueta: null, descricao: null })
+        .select("id")
+        .single();
+      if (!r.error) criada = r.data as { id: string };
+      else if (r.error.code === "23505") slug = await slugLivre(`${slugify(txt(form, "slug", 60) || titulo) || "pagina"}-${Math.floor(Math.random() * 9000) + 1000}`);
+      else throw r.error;
+    }
+    if (!criada) throw new Error("não foi possível reservar um endereço");
+    const id = criada.id;
     const tipos = MODELOS[modelo] ?? [];
     if (tipos.length) {
       const r = await db.from("blocos").insert(tipos.map((t, i) => ({ pagina_id: id, tipo: t, dados: BLOCOS[t].padrao, ordem: (i + 1) * 10 })));
@@ -339,8 +348,11 @@ export async function salvarPagina(form: FormData) {
     slugFinal = atual!.slug;
     const pedido = slugify(txt(form, "slug", 60));
     if (!atual!.protegida && pedido && pedido !== atual!.slug) {
-      slugFinal = await slugLivre(pedido, id);
-      campos.slug = slugFinal;
+      if (SLUGS_RESERVADOS.has(pedido)) ir(volta, "erro", `O endereço “${pedido}” é reservado pelo sistema. Escolha outro.`);
+      const { data: ocupado } = await db.from("paginas").select("id").eq("slug", pedido).neq("id", id).maybeSingle();
+      if (ocupado) ir(volta, "erro", `O endereço “${pedido}” já é de outra página. Escolha outro.`);
+      slugFinal = pedido;
+      campos.slug = pedido;
     }
     const r = await db.from("paginas").update(campos).eq("id", id);
     if (r.error) throw r.error;

@@ -6,7 +6,9 @@ import CamposPost from "../../../_components/CamposPost";
 
 const RETORNO = "/painel/admin/posts";
 
-export default async function AdminPosts({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
+export default async function AdminPosts() {
+  // as mensagens (?ok= / ?erro=) são lidas no navegador pelo MensagemAdmin; a página não depende da URL
+  const searchParams = Promise.resolve({} as { ok?: string; erro?: string });
   const [{ ok, erro }, posts] = await Promise.all([searchParams, listarPostsAdmin()]);
   return (
     <>

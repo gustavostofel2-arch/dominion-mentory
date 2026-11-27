@@ -472,3 +472,38 @@ a.notif-item:hover{background:var(--surface-2)}
   .moldura{margin-inline:10px}
   .mold-barra{top:106px}
 }
+
+/* guia do celular */
+.guia .passo{display:flex;gap:14px;align-items:flex-start;border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 16px;margin-bottom:12px}
+.guia .passo.ok{border-color:#214a30;background:linear-gradient(135deg,#0f2216,var(--surface) 70%)}
+.passo-n{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);display:grid;place-items:center;font:700 .85rem var(--mono);flex:none}
+.passo.ok .passo-n{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)}
+.passo-c{flex:1;min-width:0}
+.passo-c h3{font-size:1rem;margin-bottom:6px}
+.passo-c p{color:#d2d0ca;font-size:.9rem}
+.passo-c ol{margin:0;padding-left:18px;display:grid;gap:6px;color:#d2d0ca;font-size:.9rem}
+.passo-c .push-card{margin:10px 0 0}
+.ic-inline{width:1.15em;height:1.15em;vertical-align:-.2em;color:var(--accent)}
+.sp-opcoes{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:4px 14px 12px;border-bottom:1px solid var(--line)}
+
+/* correções da bateria de testes */
+.mais-fundo{display:block !important;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6)}
+.mais-folha{position:absolute;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 110px);overflow-y:auto;background:var(--surface);border:1px solid #4a3512;border-radius:18px;padding:8px;display:grid;gap:2px;box-shadow:0 30px 80px -20px #000}
+.mais-folha a{display:flex;align-items:center;gap:14px;padding:14px;border-radius:12px;text-decoration:none;color:var(--ink);font-weight:600}
+.mais-folha a svg{width:21px;height:21px;color:var(--accent);flex:none}
+.mais-folha a.on{background:var(--accent-soft);color:var(--accent)}
+@media (min-width:861px){.mais-fundo{display:none !important}}
+/* o menu ⋯ de um bloco não pode ficar coberto pela barra do bloco seguinte */
+.mold-barra:focus-within,.mold-barra:has(.pontos-btn[aria-expanded=true]){z-index:60}
+.moldura:focus-within,.moldura:has(.pontos-btn[aria-expanded=true]){z-index:30}
+/* textos longos sem espaços não quebram o layout */
+.rule .tt,.rule .tag,.tool h4,.tool p,.post h2,.ptexto,.aviso h2,.aviso p{overflow-wrap:anywhere}
+.rule summary{min-width:0}
+.rule .tag{max-width:46%;white-space:normal;text-align:center}
+.step .pix{overflow-wrap:anywhere;font-size:clamp(.78rem,3.6vw,1.05rem)}
+.step{min-width:0}
+/* alvos de toque do celular */
+@media (max-width:860px){
+  .barra-edicao .btn,.mold-acoes .btn,.sair-m .btn,.topbar .btn{min-height:40px}
+  .side nav a .sh,.side nav .mais-btn .sh{font-size:.6rem}
+}

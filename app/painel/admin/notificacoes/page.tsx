@@ -28,7 +28,9 @@ async function contagens(ids: string[]): Promise<Map<string, Linha>> {
 
 const ROTULO = { aviso: "Aviso", post: "Postagem", manual: "Comunicado" } as const;
 
-export default async function AdminNotificacoes({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
+export default async function AdminNotificacoes() {
+  // as mensagens (?ok= / ?erro=) são lidas no navegador pelo MensagemAdmin; a página não depende da URL
+  const searchParams = Promise.resolve({} as { ok?: string; erro?: string });
   const [{ ok, erro }, lista, aparelhos] = await Promise.all([searchParams, listarNotificacoes(30), contarAparelhos()]);
   const nums = await contagens(lista.map((n) => n.id));
   const push = pushConfigurado();

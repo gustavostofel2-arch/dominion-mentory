@@ -1,6 +1,7 @@
 import { carregarPainel, rotuloMenu } from "@/lib/paginas";
 import { alternarEdicao, criarPagina, excluirPagina, moverPagina, restaurarPaginasPadrao, salvarPagina } from "../../paginas/actions";
 import ConfirmButton from "../ConfirmButton";
+import BotaoAcao from "../BotaoAcao";
 import EscolherIcone from "../../../_components/EscolherIcone";
 import { Icone } from "../../../_components/Icone";
 
@@ -15,7 +16,9 @@ const MODELOS = [
   ["feed", "Com as postagens"],
 ] as const;
 
-export default async function AdminPaginas({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
+export default async function AdminPaginas() {
+  // as mensagens (?ok= / ?erro=) são lidas no navegador pelo MensagemAdmin; a página não depende da URL
+  const searchParams = Promise.resolve({} as { ok?: string; erro?: string });
   const [{ ok, erro }, { paginas, doBanco }] = await Promise.all([searchParams, carregarPainel()]);
 
   return (
@@ -107,9 +110,9 @@ export default async function AdminPaginas({ searchParams }: { searchParams: Pro
                 </div>
                 <div className="acts">
                   <button className="btn primary mini" type="submit" formAction={salvarPagina}>Salvar</button>
-                  <button className="btn mini" type="submit" name="destino" value={p.slug === "inicio" ? "/painel" : `/painel/${p.slug}`} formAction={alternarEdicao} formNoValidate>✎ Editar o conteúdo</button>
-                  <button className="btn mini" type="submit" name="dir" value="up" formAction={moverPagina} formNoValidate disabled={i === 0}>↑ Subir</button>
-                  <button className="btn mini" type="submit" name="dir" value="down" formAction={moverPagina} formNoValidate disabled={i === paginas.length - 1}>↓ Descer</button>
+                  <BotaoAcao action={alternarEdicao} campos={{ destino: p.slug === "inicio" ? "/painel" : `/painel/${p.slug}` }} className="btn mini">✎ Editar o conteúdo</BotaoAcao>
+                  <BotaoAcao action={moverPagina} campos={{ dir: "up" }} className="btn mini" disabled={i === 0}>↑ Subir</BotaoAcao>
+                  <BotaoAcao action={moverPagina} campos={{ dir: "down" }} className="btn mini" disabled={i === paginas.length - 1}>↓ Descer</BotaoAcao>
                   {!p.protegida && (
                     <ConfirmButton action={excluirPagina} msg={`Excluir a página “${p.titulo}” e todos os blocos dela? Não dá para desfazer.`} className="btn danger mini">Excluir página</ConfirmButton>
                   )}

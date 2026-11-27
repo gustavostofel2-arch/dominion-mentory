@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { cancelarPush, inscreverPush } from "../painel/notificacoes/actions";
 
-type Estado = "carregando" | "indisponivel" | "ios" | "negado" | "inativo" | "ativo";
+export type Estado = "carregando" | "indisponivel" | "ios" | "negado" | "inativo" | "ativo";
 
 function chave(base64: string): Uint8Array<ArrayBuffer> {
   const pad = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -13,10 +13,22 @@ function chave(base64: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
-export default function AtivarPush({ vapid, compacto = false }: { vapid: string | null; compacto?: boolean }) {
+export default function AtivarPush({
+  vapid,
+  compacto = false,
+  aoMudarEstado,
+}: {
+  vapid: string | null;
+  compacto?: boolean;
+  aoMudarEstado?: (e: Estado) => void;
+}) {
   const [estado, setEstado] = useState<Estado>("carregando");
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState("");
+
+  useEffect(() => {
+    aoMudarEstado?.(estado);
+  }, [estado, aoMudarEstado]);
 
   useEffect(() => {
     let vivo = true;

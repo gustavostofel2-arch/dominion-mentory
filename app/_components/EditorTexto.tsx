@@ -81,6 +81,7 @@ export default function EditorTexto({
   const [emojis, setEmojis] = useState(false);
   const [linkAberto, setLinkAberto] = useState(false);
   const [link, setLink] = useState("");
+  const [linkErro, setLinkErro] = useState("");
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -157,7 +158,11 @@ export default function EditorTexto({
     const c = editor!.chain().focus().extendMarkRange("link");
     if (!url || url === "https://") c.unsetLink().run();
     else if (/^https?:\/\//i.test(url)) c.setLink({ href: url }).run();
-    else c.setLink({ href: "https://" + url }).run();
+    else if (/^[a-z][a-z0-9+.-]*:/i.test(url)) {
+      setLinkErro("Use um link que comece com https://");
+      return;
+    } else c.setLink({ href: "https://" + url }).run();
+    setLinkErro("");
     setLinkAberto(false);
   }
 
@@ -187,7 +192,8 @@ export default function EditorTexto({
       {linkAberto && (
         <div className="pop-link">
           <input
-            type="url"
+            type="text"
+            inputMode="url"
             value={link}
             autoFocus
             placeholder="https://…"
@@ -201,6 +207,7 @@ export default function EditorTexto({
           />
           <button type="button" className="btn primary mini" onClick={aplicarLink}>Aplicar</button>
           <button type="button" className="btn mini" onClick={() => setLinkAberto(false)}>Cancelar</button>
+          {linkErro && <span className="erro-in">{linkErro}</span>}
         </div>
       )}
 

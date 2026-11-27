@@ -79,3 +79,18 @@ export async function reduzir(src: string): Promise<File> {
   x.drawImage(img, 0, 0, c.width, c.height);
   return comprimir(c);
 }
+
+/** Recorte centralizado (preenche todo o formato): usado assim que a pessoa escolhe a imagem. */
+export async function areaCentral(src: string, alvo: { w: number; h: number }): Promise<Area> {
+  const img = await carregar(src);
+  const proporcao = alvo.w / alvo.h;
+  let w = img.width;
+  let h = img.height;
+  if (w / h > proporcao) w = h * proporcao;
+  else h = w / proporcao;
+  return { x: (img.width - w) / 2, y: (img.height - h) / 2, width: w, height: h };
+}
+
+export async function recortarCentral(src: string, alvo: { w: number; h: number }): Promise<File> {
+  return recortar(src, await areaCentral(src, alvo), 0, alvo);
+}
