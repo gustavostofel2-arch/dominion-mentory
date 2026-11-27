@@ -58,3 +58,6 @@ update public.avisos a
  where a.post_id = p.id
    and a.imagem_url is null
    and p.imagem_url is not null;
+
+-- 4) Aviso criado a partir de postagem mostra só imagem e título (o texto fica na postagem) ---
+update public.avisos set texto = '' where post_id is not null;

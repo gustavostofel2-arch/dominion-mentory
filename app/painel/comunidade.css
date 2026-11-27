@@ -570,3 +570,20 @@ a.notif-item:hover{background:var(--surface-2)}
 /* banner do aviso: 16:9 inteiro, sem cortar; o aviso fica com largura confortável em vez de esticar na tela toda */
 .aviso.com-img .aviso-img{aspect-ratio:16/9;max-height:none;height:auto;object-fit:cover}
 .carrossel{max-width:820px;margin-inline:auto}
+
+/* ---- aviso: layout limpo (celular e computador) ---- */
+.car-trilho{align-items:flex-start}
+.car-slide .aviso{height:auto}
+/* com imagem, o ícone de megafone some: a imagem já chama atenção */
+.aviso.com-img .ic,.aviso.com-mini .ic{display:none}
+.aviso.com-img .aviso-corpo{grid-template-columns:1fr auto;padding:14px 18px}
+.aviso.com-mini{grid-template-columns:auto minmax(0,1fr)}
+.aviso.com-mini .aviso-corpo{grid-template-columns:minmax(0,1fr);gap:12px;padding:14px 16px 14px 14px}
+.aviso.com-mini .aviso-corpo .btn{justify-self:start}
+.aviso p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+@media (max-width:640px){
+  .carrossel{padding:18px 14px 0}
+  .aviso h2{font-size:1.02rem;line-height:1.25}
+  .aviso.com-img .aviso-corpo{grid-template-columns:1fr;gap:10px}
+  .aviso.com-img .aviso-corpo .btn,.aviso.com-mini .aviso-corpo .btn{justify-self:stretch;text-align:center}
+}

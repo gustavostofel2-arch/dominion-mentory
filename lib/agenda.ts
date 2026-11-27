@@ -61,7 +61,7 @@ export async function sincronizarAvisoDoPost(
   }
   const campos: Record<string, unknown> = {
     titulo: post.titulo.slice(0, 140),
-    texto: textoPuro(post.corpo).slice(0, 200),
+    texto: "", // aviso de postagem leva só a imagem e o título; o texto fica na própria postagem
     tipo: TIPOS_AVISO.includes(opts.tipo) ? opts.tipo : "importante",
     link_url: `/painel/novidades/${post.id}`,
     link_texto: "Ver postagem",

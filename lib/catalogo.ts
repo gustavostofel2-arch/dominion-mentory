@@ -152,10 +152,12 @@ type LinhaAviso = {
 };
 
 function paraAviso(a: LinhaAviso): Aviso {
+  // aviso que veio de uma postagem leva só a imagem e o título (o texto fica na postagem)
+  const dePostagem = !!a.link_url && a.link_url.startsWith("/painel/novidades/");
   return {
     id: a.id,
     titulo: a.titulo,
-    texto: a.texto,
+    texto: dePostagem ? "" : a.texto,
     tipo: a.tipo,
     linkUrl: a.link_url,
     linkTexto: a.link_texto,
