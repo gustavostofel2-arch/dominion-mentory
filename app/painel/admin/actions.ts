@@ -825,3 +825,11 @@ export async function apagarDoHistorico(form: FormData) {
   revalidatePath(AGENDA);
   voltar(AGENDA, "ok", "Removido do histórico.");
 }
+
+/** Botão "Atualizar o site agora": limpa os guardados do site (útil depois de mexer direto no banco, pelo SQL). */
+export async function atualizarSite() {
+  await exigirAdmin();
+  for (const t of ["catalogo", "avisos", "posts", "notificacoes", "paginas", "admins"]) revalidateTag(t);
+  revalidatePath("/painel", "layout");
+  voltar("/painel/admin", "ok", "Site atualizado: tudo foi lido de novo do banco.");
+}

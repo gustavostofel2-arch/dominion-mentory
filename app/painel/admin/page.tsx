@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { atualizarSite } from "./actions";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { lerAvisosAdmin, lerCatalogoCompleto } from "@/lib/catalogo";
 
@@ -49,6 +50,14 @@ export default async function AdminInicio() {
         <div className="stat"><b>{modulos.length}</b><span>módulos</span></div>
         <div className="stat"><b>{itens}</b><span>ferramentas</span></div>
         <div className="stat"><b>{avisosAtivos}</b><span>avisos no ar</span></div>
+      </div>
+
+      <div className="panel">
+        <h2>Atualizar o site agora</h2>
+        <p className="dica">O site guarda avisos, menu e postagens por até 1 ou 2 minutos para ser rápido. Se você mexeu direto no banco (SQL) e a tela não mudou, clique aqui.</p>
+        <form action={atualizarSite} style={{ marginTop: 10 }}>
+          <button className="btn primary" type="submit">Atualizar o site agora</button>
+        </form>
       </div>
 
       <div className="panel">
