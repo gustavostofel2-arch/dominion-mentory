@@ -660,6 +660,24 @@ export async function enviarComunicado(form: FormData) {
   const link = linkBruto ? urlOk(linkBruto) : null;
   if (!titulo) voltar(NOTIFS, "erro", "Escreva o título da notificação.");
   if (linkBruto && !link) voltar(NOTIFS, "erro", "Confira o link (ex.: https://site.com ou /painel/novidades).");
+  // agendada? (o campo vem do navegador no horário de Brasília, ex.: 2026-11-28T19:30)
+  const quando = String(form.get("quando") ?? "").trim();
+  if (quando) {
+    if (!/^d{4}-d{2}-d{2}Td{2}:d{2}$/.test(quando)) voltar(NOTIFS, "erro", "Confira a data e a hora do agendamento.");
+    const enviarEm = new Date(quando + ":00-03:00");
+    if (Number.isNaN(enviarEm.getTime())) voltar(NOTIFS, "erro", "Confira a data e a hora do agendamento.");
+    if (enviarEm.getTime() < Date.now() + 60_000) voltar(NOTIFS, "erro", "Escolha um horário futuro (ou deixe o campo vazio para enviar agora).");
+    try {
+      const { error } = await supabaseAdmin()
+        .from("notificacoes_agendadas")
+        .insert({ titulo, texto, link: link ?? null, enviar_em: enviarEm.toISOString(), autor_email: email });
+      if (error) throw new Error(error.message);
+    } catch (e) {
+      falhou(NOTIFS, e);
+    }
+    limpar(NOTIFS);
+    voltar(NOTIFS, "ok", "Notificação agendada. Ela sai sozinha no horário escolhido.");
+  }
   let msg = "Notificação enviada no sino.";
   try {
     const r = await notificarTodos({ tipo: "manual", titulo, texto, link: link ?? "/painel", autorEmail: email });
@@ -673,4 +691,18 @@ export async function enviarComunicado(form: FormData) {
   }
   limpar(NOTIFS);
   voltar(NOTIFS, "ok", msg);
+}
+
+export async function cancelarAgendada(form: FormData) {
+  await exigirAdmin();
+  const id = String(form.get("id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) voltar(NOTIFS, "erro", "Notificação não encontrada.");
+  try {
+    const { error } = await supabaseAdmin().from("notificacoes_agendadas").delete().eq("id", id).eq("status", "pendente");
+    if (error) throw new Error(error.message);
+  } catch (e) {
+    falhou(NOTIFS, e);
+  }
+  limpar(NOTIFS);
+  voltar(NOTIFS, "ok", "Agendamento cancelado.");
 }

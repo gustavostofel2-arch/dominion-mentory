@@ -507,3 +507,11 @@ a.notif-item:hover{background:var(--surface-2)}
   .barra-edicao .btn,.mold-acoes .btn,.sair-m .btn,.topbar .btn{min-height:40px}
   .side nav a .sh,.side nav .mais-btn .sh{font-size:.6rem}
 }
+
+/* campo com emoji (notificações) */
+.campo-emo{position:relative}
+.campo-emo .emo-abrir{align-self:flex-start;margin-top:6px;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:6px 10px;font:500 .8rem var(--body);cursor:pointer}
+.campo-emo .emo-abrir:hover{border-color:var(--accent);color:var(--accent)}
+.emo-grade{display:flex;flex-wrap:wrap;gap:6px;padding:8px;margin-top:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.emo-grade button{background:transparent;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:1.1rem;cursor:pointer;min-width:40px;min-height:40px}
+.emo-grade button:hover{border-color:var(--accent)}
