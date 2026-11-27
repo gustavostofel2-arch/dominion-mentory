@@ -587,3 +587,10 @@ a.notif-item:hover{background:var(--surface-2)}
   .aviso.com-img .aviso-corpo{grid-template-columns:1fr;gap:10px}
   .aviso.com-img .aviso-corpo .btn,.aviso.com-mini .aviso-corpo .btn{justify-self:stretch;text-align:center}
 }
+
+/* cartão grande dentro de uma grade: o botão nunca é cortado (cai para baixo quando o cartão é estreito) */
+.cartoes .flow{grid-template-columns:minmax(0,1fr);gap:16px;align-items:start;padding:22px;min-width:0}
+.cartoes .flow .btn{justify-self:start}
+.cartoes .flow h2{font-size:clamp(1.15rem,2.4vw,1.5rem);overflow-wrap:anywhere}
+.cartoes.c1 .flow{grid-template-columns:minmax(0,1fr) auto;align-items:center}
+@media (max-width:700px){.cartoes.c1 .flow{grid-template-columns:minmax(0,1fr)}}
