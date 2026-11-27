@@ -567,3 +567,6 @@ a.notif-item:hover{background:var(--surface-2)}
 .aviso.com-mini{grid-template-columns:auto 1fr;align-items:center}
 .aviso.com-mini .aviso-img{width:112px;height:auto;min-height:0;aspect-ratio:1/1;align-self:center;margin:14px 0 14px 14px;border-radius:12px}
 @media (max-width:640px){.aviso.com-mini .aviso-img{width:84px;margin:12px 0 12px 12px}}
+/* banner do aviso: 16:9 inteiro, sem cortar; o aviso fica com largura confortável em vez de esticar na tela toda */
+.aviso.com-img .aviso-img{aspect-ratio:16/9;max-height:none;height:auto;object-fit:cover}
+.carrossel{max-width:820px;margin-inline:auto}
