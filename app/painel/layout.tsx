@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import Link from "next/link";
+import BarraProgresso from "../_components/BarraProgresso";
 import "./painel.css";
 import "./comunidade.css";
 import { sair } from "../login/actions";
@@ -71,10 +73,11 @@ export default async function PainelLayout({ children }: { children: React.React
 
   return (
     <div className="app">
+      <BarraProgresso />
       <aside className="side">
-        <a className="brand" href="/painel" aria-label="Painel Dominion Mentory">
+        <Link className="brand" href="/painel" aria-label="Painel Dominion Mentory">
           <img className="lg" src="/img/logo.png" alt="Dominion Mentory" />
-        </a>
+        </Link>
         <NavLateral itens={nav} />
         <div className="side-foot hide-m">
           <NomeTopo />
@@ -86,9 +89,9 @@ export default async function PainelLayout({ children }: { children: React.React
 
       <div className="col">
         <header className="topbar">
-          <a className="brand-m" href="/painel" aria-label="Painel">
+          <Link className="brand-m" href="/painel" aria-label="Painel">
             <img className="lg" src="/img/logo.png" alt="Dominion Mentory" />
-          </a>
+          </Link>
           <Busca entradas={entradas} />
           <Sino naoLidas={naoLidas} vapid={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
           {admin && <CriarMenu />}

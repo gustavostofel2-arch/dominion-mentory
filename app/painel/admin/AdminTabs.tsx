@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ABAS = [
@@ -17,9 +18,9 @@ export default function AdminTabs() {
   return (
     <nav className="adm-tabs" aria-label="Admin">
       {ABAS.map((a) => (
-        <a key={a.href} href={a.href} className={path === a.href ? "on" : undefined} aria-current={path === a.href ? "page" : undefined}>
+        <Link key={a.href} href={a.href} className={path === a.href ? "on" : undefined} aria-current={path === a.href ? "page" : undefined}>
           {a.label}
-        </a>
+        </Link>
       ))}
     </nav>
   );
