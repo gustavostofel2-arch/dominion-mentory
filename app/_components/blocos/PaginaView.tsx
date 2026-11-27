@@ -30,7 +30,7 @@ export default async function PaginaView({ slug }: { slug: string }) {
   const editar = admin && editando === retorno;
   const blocos = editar ? pagina.blocos : pagina.blocos.filter((b) => b.visivel);
   const modulos = editar ? (await carregarCatalogo()).map((m) => ({ id: m.id, titulo: m.titulo })) : [];
-  const ctx = { email, admin };
+  const ctx = { email, admin, slug };
 
   return (
     <>

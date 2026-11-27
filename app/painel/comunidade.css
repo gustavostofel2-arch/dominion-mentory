@@ -541,3 +541,20 @@ a.notif-item:hover{background:var(--surface-2)}
 /* barra de progresso de navegação */
 .barra-prog{position:fixed;top:0;left:0;height:3px;width:0;z-index:300;background:linear-gradient(90deg,var(--accent),#ffb36b);opacity:0;pointer-events:none;transition:opacity .2s}
 .barra-prog.on{opacity:1;width:85%;transition:width 8s cubic-bezier(.1,.7,.2,1),opacity .1s}
+
+/* cor dos cartões */
+.cor-azul{--cc:#4f86ff}.cor-laranja{--cc:#ff8a2a}.cor-verde{--cc:#2fcf7f}.cor-roxo{--cc:#9b6bff}.cor-vermelho{--cc:#ff5a4d}
+.tool[class*="cor-"]{background:linear-gradient(160deg,color-mix(in srgb,var(--cc) 16%,var(--surface)),var(--surface));border-color:color-mix(in srgb,var(--cc) 45%,var(--line))}
+.tool[class*="cor-"] .ic{color:var(--cc)}
+.flow[class*="cor-"]{background:linear-gradient(135deg,color-mix(in srgb,var(--cc) 22%,#0b0f1a),var(--surface));border-color:color-mix(in srgb,var(--cc) 55%,var(--line))}
+.flow[class*="cor-"] .tag{background:color-mix(in srgb,var(--cc) 25%,transparent);color:var(--cc)}
+
+/* imagens: nunca ocupam a tela inteira */
+.pimg{max-height:min(520px,70vh);object-fit:cover}
+.pimg.banner{max-width:100%;max-height:340px}
+.pimg.quadrada{max-width:min(460px,100%)}
+.pimg.retrato{max-width:min(400px,100%);max-height:min(520px,70vh)}
+.it-img{max-height:420px;object-fit:cover}
+.bl-imagem img{max-height:380px;object-fit:cover}
+.bl-imagem.media img{width:auto;max-width:100%;max-height:460px;margin-inline:auto;object-fit:contain}
+@media (max-width:720px){.bl-imagem img{max-height:260px}.it-img{max-height:300px}}

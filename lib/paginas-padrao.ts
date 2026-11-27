@@ -158,7 +158,7 @@ export const PAGINAS_PADRAO: PaginaPadrao[] = [
       },
       {
         tipo: "feed",
-        dados: { titulo: "Últimas novidades", limite: 3, so_fixadas: false, ver_todas_texto: "Ver todas →", ver_todas_url: "/painel/novidades" },
+        dados: { titulo: "Em destaque", modo: "destacadas" },
       },
       {
         tipo: "ferramentas",
@@ -166,8 +166,6 @@ export const PAGINAS_PADRAO: PaginaPadrao[] = [
           titulo: "Comece por aqui",
           mostrar: "destaques",
           modulo: "todos",
-          ver_todas_texto: "Ver todas as ferramentas →",
-          ver_todas_url: "/painel/ferramentas",
         },
       },
       {
@@ -196,7 +194,7 @@ export const PAGINAS_PADRAO: PaginaPadrao[] = [
     mostrar_cabecalho: true,
     protegida: false,
     ordem: 10,
-    blocos: [{ tipo: "feed", dados: { titulo: "", limite: 40, so_fixadas: false, ver_todas_texto: "", ver_todas_url: "" } }],
+    blocos: [{ tipo: "feed", dados: { titulo: "", modo: "pagina" } }],
   },
   {
     slug: "ferramentas",

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import BarraProgresso from "../_components/BarraProgresso";
+import { DestinosProvider } from "../_components/Destinos";
 import "./painel.css";
 import "./comunidade.css";
 import { sair } from "../login/actions";
@@ -72,6 +73,7 @@ export default async function PainelLayout({ children }: { children: React.React
   }
 
   return (
+    <DestinosProvider destinos={paginas.filter((p) => p.slug !== "inicio").map((p) => ({ slug: p.slug, rotulo: rotuloMenu(p) }))}>
     <div className="app">
       <BarraProgresso />
       <aside className="side">
@@ -108,5 +110,6 @@ export default async function PainelLayout({ children }: { children: React.React
         <MensagemUrl />
       </Suspense>
     </div>
+    </DestinosProvider>
   );
 }

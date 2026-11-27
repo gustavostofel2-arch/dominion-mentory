@@ -4,6 +4,7 @@ import { useState } from "react";
 import EditorTexto from "./EditorTexto";
 import UploadImagem from "./UploadImagem";
 import CampoEmoji from "./CampoEmoji";
+import { useDestinos } from "./Destinos";
 
 export type PostEditavel = {
   id: string;
@@ -14,12 +15,16 @@ export type PostEditavel = {
   fixado: boolean;
   publicado: boolean;
   avisoTipo: "info" | "importante" | "urgente" | null;
+  /** Página onde está publicada (slug). Vazio = Novidades. */
+  paginaSlug?: string | null;
   /** Se a publicação está agendada: data no formato do campo (horário de Brasília). */
   agendadoPara?: string | null;
 };
 
 /** Campos da postagem, iguais ao criar (Admin) e ao editar (menu ⋯ no feed). */
-export default function CamposPost({ post, retorno }: { post?: PostEditavel; retorno: string }) {
+export default function CamposPost({ post, retorno, destino }: { post?: PostEditavel; retorno: string; destino?: string }) {
+  const destinos = useDestinos();
+  const inicial = post ? post.paginaSlug ?? "" : destino ?? "";
   const [virarAviso, setVirarAviso] = useState(!!post?.avisoTipo);
   return (
     <div className="campos-post">
@@ -35,6 +40,15 @@ export default function CamposPost({ post, retorno }: { post?: PostEditavel; ret
 
       <UploadImagem atual={post?.imagemUrl} formatoAtual={post?.formato} />
 
+      <div className="fld">
+        <label>Onde publicar</label>
+        <select name="pagina_slug" defaultValue={destinos.some((d) => d.slug === inicial) ? inicial : ""}>
+          <option value="">Novidades</option>
+          {destinos.filter((d) => d.slug !== "novidades").map((d) => <option key={d.slug} value={d.slug}>{d.rotulo}</option>)}
+        </select>
+        <p className="dica">A postagem aparece só nessa página (e no Início, se você destacar).</p>
+      </div>
+
       <fieldset className="opcoes">
         <legend>Onde aparece</legend>
         <label className="chk">
@@ -43,7 +57,7 @@ export default function CamposPost({ post, retorno }: { post?: PostEditavel; ret
         </label>
         <label className="chk">
           <input type="checkbox" name="fixado" defaultChecked={post?.fixado ?? false} />
-          <span><b>Fixar no topo</b> das Novidades <small>(fica sempre em primeiro, com o selo “Fixado”)</small></span>
+          <span><b>Destacar</b> <small>(fica no topo da página e aparece no Início, com o selo “Destaque”)</small></span>
         </label>
       </fieldset>
 

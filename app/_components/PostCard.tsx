@@ -29,6 +29,7 @@ export default function PostCard({ post, completo = false, admin = false }: { po
                 fixado: post.fixado,
                 publicado: post.publicado,
                 avisoTipo: post.avisoTipo,
+                paginaSlug: post.paginaSlug,
               }}
             />
           )}
@@ -37,7 +38,7 @@ export default function PostCard({ post, completo = false, admin = false }: { po
 
       {(post.fixado || post.avisoTipo || !post.publicado) && (
         <div className="selos">
-          {post.fixado && <span className="pin">📌 Fixado</span>}
+          {post.fixado && <span className="pin">⭐ Destaque</span>}
           {post.avisoTipo && <span className="pin aviso">📢 Também é aviso</span>}
           {!post.publicado && <span className="pin rasc">Rascunho</span>}
         </div>

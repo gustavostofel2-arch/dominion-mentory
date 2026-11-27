@@ -437,6 +437,8 @@ function lerPost(form: FormData, volta: string) {
     formato: FORMATOS.includes(formato) ? formato : null,
     fixado: marcado(form, "fixado"),
     publicado: marcado(form, "publicado"),
+    // onde a postagem aparece: "" = Novidades, ou o endereço de uma página (só letras minúsculas, números e hífen)
+    pagina_slug: /^[a-z0-9]+(-[a-z0-9]+)*$/.test(txt(form, "pagina_slug", 40)) && txt(form, "pagina_slug", 40) !== "novidades" ? txt(form, "pagina_slug", 40) : null,
   };
 }
 
@@ -449,10 +451,11 @@ async function sincronizarAviso(form: FormData, post: DadosPost): Promise<"criad
 async function inserirPost(linha: Record<string, unknown>): Promise<string> {
   const db = supabaseAdmin();
   let r = await db.from("posts").insert(linha).select("id").single();
-  if (r.error && /autor_usuario/i.test(r.error.message)) {
-    // etapa 4 ainda não rodou no banco: grava sem o @ do autor
+  if (r.error && /autor_usuario|pagina_slug/i.test(r.error.message)) {
+    // etapa 4 ou 7 ainda não rodou no banco: grava sem o @ do autor / sem a página
     const resto = { ...linha };
     delete resto.autor_usuario;
+    delete resto.pagina_slug;
     r = await db.from("posts").insert(resto).select("id").single();
   }
   if (r.error) throw r.error;
@@ -576,7 +579,14 @@ export async function salvarPost(form: FormData) {
   const imagem_url = await resolverImagem(form, "posts", volta, await imagemAtual("posts", id));
   const formato = imagem_url ? campos.formato ?? "quadrada" : null;
   try {
-    const { error } = await supabaseAdmin().from("posts").update({ ...campos, formato, imagem_url }).eq("id", id);
+    const db = supabaseAdmin();
+    let { error } = await db.from("posts").update({ ...campos, formato, imagem_url }).eq("id", id);
+    if (error && /pagina_slug/i.test(error.message)) {
+      // etapa 7 ainda não rodou: salva sem a página
+      const { pagina_slug: _ignorado, ...semPagina } = campos;
+      void _ignorado;
+      ({ error } = await db.from("posts").update({ ...semPagina, formato, imagem_url }).eq("id", id));
+    }
     if (error) throw error;
   } catch (e) {
     falhou(volta, e);

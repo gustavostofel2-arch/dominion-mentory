@@ -68,6 +68,7 @@ export default async function AdminPosts() {
                 publicado: p.publicado,
                 avisoTipo: p.avisoTipo,
                 agendadoPara: agenda.get(p.id) ?? null,
+                paginaSlug: p.paginaSlug,
               }}
             />
             <div className="acts">

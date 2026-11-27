@@ -21,6 +21,8 @@ export type Post = {
   euCurti: boolean;
   /** Se a postagem também está nos avisos do Início, com qual destaque. */
   avisoTipo: TipoAviso | null;
+  /** Página onde a postagem foi publicada (slug). Vazio = Novidades. */
+  paginaSlug: string | null;
 };
 
 export type Comentario = {
@@ -48,9 +50,11 @@ type LinhaPost = {
   comentarios?: number | string;
   eu_curti?: boolean;
   aviso_tipo?: TipoAviso | null;
+  pagina_slug?: string | null;
 };
 
-const COLUNAS_BASE = "id,titulo,corpo,imagem_url,formato,fixado,publicado,autor_nome,criado_em";
+const COLUNAS_BASE = "id,titulo,corpo,imagem_url,formato,fixado,publicado,autor_nome,criado_em,pagina_slug";
+const COLUNAS_SEM_PAGINA = "id,titulo,corpo,imagem_url,formato,fixado,publicado,autor_nome,criado_em";
 
 function paraPost(l: LinhaPost, extra?: Partial<Post>): Post {
   return {
@@ -68,22 +72,34 @@ function paraPost(l: LinhaPost, extra?: Partial<Post>): Post {
     comentarios: Number(l.comentarios ?? 0),
     euCurti: !!l.eu_curti,
     avisoTipo: l.aviso_tipo ?? null,
+    paginaSlug: l.pagina_slug ?? null,
     ...extra,
   };
 }
 
-type Opcoes = { email: string | null; limite?: number; soFixados?: boolean; fixadosPrimeiro?: boolean; rascunhos?: boolean };
+type Opcoes = {
+  email: string | null;
+  limite?: number;
+  soFixados?: boolean;
+  fixadosPrimeiro?: boolean;
+  rascunhos?: boolean;
+  /** Só as postagens publicadas nesta página (slug). */
+  pagina?: string;
+  /** Junto com as da página, as sem página (a aba Novidades). */
+  comNovidades?: boolean;
+};
 
 /** Caminho antigo (várias consultas): só usado se a função do banco da etapa 4 ainda não existe. */
-async function listarLegado(o: Opcoes): Promise<Post[]> {
+async function listarLegado(o: Opcoes, comPagina = true): Promise<Post[]> {
   const db = supabaseAdmin();
-  let q = db.from("posts").select(COLUNAS_BASE);
+  let q = db.from("posts").select(comPagina ? COLUNAS_BASE : COLUNAS_SEM_PAGINA);
+  if (comPagina && o.pagina) q = o.comNovidades ? q.or(`pagina_slug.eq.${o.pagina},pagina_slug.is.null`) : q.eq("pagina_slug", o.pagina);
   if (!o.rascunhos) q = q.eq("publicado", true);
   if (o.soFixados) q = q.eq("fixado", true);
   if (o.fixadosPrimeiro !== false) q = q.order("fixado", { ascending: false });
   const { data, error } = await q.order("criado_em", { ascending: false }).limit(o.limite ?? 30);
   if (error) throw error;
-  const linhas = (data ?? []) as LinhaPost[];
+  const linhas = (data ?? []) as unknown as LinhaPost[];
   if (!linhas.length) return [];
   const ids = linhas.map((l) => l.id);
   const [c, m] = await Promise.all([
@@ -110,20 +126,27 @@ export async function listarFeed(o: Opcoes): Promise<Post[]> {
       p_so_fixados: !!o.soFixados,
       p_fixados_primeiro: o.fixadosPrimeiro !== false,
       p_rascunhos: !!o.rascunhos,
+      p_pagina: o.pagina ?? null,
+      p_incluir_novidades: !!o.comNovidades,
     });
     if (error) throw error;
     return ((data ?? []) as LinhaPost[]).map((l) => paraPost(l));
   } catch {
+    // etapa 7 ainda não rodada: tenta pelo caminho antigo (e, sem a coluna da página, sem o filtro)
     try {
       return await listarLegado(o);
     } catch {
-      return [];
+      try {
+        return await listarLegado(o, false);
+      } catch {
+        return [];
+      }
     }
   }
 }
 
 /** Posts publicados: fixados primeiro, depois os mais novos. */
-export function listarPosts(opts: { email: string | null; limite?: number; soFixados?: boolean }): Promise<Post[]> {
+export function listarPosts(opts: { email: string | null; limite?: number; soFixados?: boolean; pagina?: string; comNovidades?: boolean }): Promise<Post[]> {
   return listarFeed({ ...opts, fixadosPrimeiro: true });
 }
 

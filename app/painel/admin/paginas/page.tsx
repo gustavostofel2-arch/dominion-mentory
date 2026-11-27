@@ -114,7 +114,7 @@ export default async function AdminPaginas() {
                   <BotaoAcao action={moverPagina} campos={{ dir: "up" }} className="btn mini" disabled={i === 0}>↑ Subir</BotaoAcao>
                   <BotaoAcao action={moverPagina} campos={{ dir: "down" }} className="btn mini" disabled={i === paginas.length - 1}>↓ Descer</BotaoAcao>
                   {!p.protegida && (
-                    <ConfirmButton action={excluirPagina} msg={`Excluir a página “${p.titulo}” e todos os blocos dela? Não dá para desfazer.`} className="btn danger mini">Excluir página</ConfirmButton>
+                    <ConfirmButton action={excluirPagina} msg={`Excluir a página “${p.titulo}”, os blocos e as postagens dela? Não dá para desfazer.`} className="btn danger mini">Excluir página</ConfirmButton>
                   )}
                 </div>
               </form>

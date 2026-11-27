@@ -9,7 +9,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { BLOCOS, ICONES_PAGINA, ehTipo, normalizarDados, type Dados, type TipoBloco } from "@/lib/blocos";
 import { PAGINAS_PADRAO } from "@/lib/paginas-padrao";
 import { SLUGS_RESERVADOS } from "@/lib/paginas";
-import { enviarImagem } from "@/lib/storage";
+import { apagarImagem, enviarImagem } from "@/lib/storage";
 import { COOKIE_EDICAO } from "@/lib/edicao";
 import { emitir } from "@/lib/tempo-real";
 
@@ -356,6 +356,7 @@ export async function salvarPagina(form: FormData) {
     }
     const r = await db.from("paginas").update(campos).eq("id", id);
     if (r.error) throw r.error;
+    if (slugFinal !== atual!.slug) await db.from("posts").update({ pagina_slug: slugFinal }).eq("pagina_slug", atual!.slug);
   } catch (e) {
     falhou(volta, e);
   }
@@ -397,8 +398,19 @@ export async function excluirPagina(form: FormData) {
   const id = txt(form, "id", 40);
   try {
     const db = supabaseAdmin();
-    const { data } = await db.from("paginas").select("protegida").eq("id", id).maybeSingle();
+    const { data } = await db.from("paginas").select("protegida,slug").eq("id", id).maybeSingle();
     if ((data as { protegida?: boolean } | null)?.protegida) ir(ADMIN_PAGINAS, "erro", "O Início não pode ser apagado (mas você pode editá-lo).");
+    const slug = (data as { slug?: string } | null)?.slug;
+    if (slug) {
+      // as postagens feitas nessa página vão embora com ela (senão ficariam escondidas, sem lugar)
+      const { data: posts } = await db.from("posts").select("id,imagem_url").eq("pagina_slug", slug);
+      const lista = (posts ?? []) as { id: string; imagem_url: string | null }[];
+      if (lista.length) {
+        for (const p of lista) await apagarImagem(p.imagem_url);
+        await db.from("notificacoes").delete().in("ref_id", lista.map((p) => p.id));
+        await db.from("posts").delete().eq("pagina_slug", slug);
+      }
+    }
     const r = await db.from("paginas").delete().eq("id", id);
     if (r.error) throw r.error;
   } catch (e) {

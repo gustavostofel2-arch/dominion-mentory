@@ -13,7 +13,7 @@ import PostCard from "../PostCard";
 import NovaPostagem from "../NovaPostagem";
 import Corrida from "./Corrida";
 
-export type Ctx = { email: string | null; admin: boolean };
+export type Ctx = { email: string | null; admin: boolean; slug?: string };
 
 const s = (v: unknown) => (typeof v === "string" ? v : "");
 const arr = <T,>(v: unknown) => (Array.isArray(v) ? (v as T[]) : []);
@@ -24,6 +24,10 @@ function Lnk({ url, className, children }: { url: string; className?: string; ch
   if (url.startsWith("/")) return <Link className={className} href={url}>{children}</Link>;
   return <a className={className} href={url} target="_blank" rel="noopener noreferrer">{children}</a>;
 }
+
+const CORES = ["azul", "laranja", "verde", "roxo", "vermelho"];
+/** Classe de cor do cartão ("" = neutra). */
+const corDe = (c?: string) => (c && CORES.includes(c) ? ` cor-${c}` : "");
 
 function Titulo({ titulo, ver }: { titulo: string; ver?: { texto: string; url: string } }) {
   if (!titulo && !ver?.texto) return null;
@@ -145,7 +149,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
     }
 
     case "cartoes": {
-      const itens = arr<{ icone: string; etiqueta: string; titulo: string; texto: string; url: string; botao: string }>(d.itens);
+      const itens = arr<{ icone: string; etiqueta: string; titulo: string; texto: string; url: string; botao: string; cor?: string }>(d.itens);
       if (!itens.length) return ctx.admin ? <BlocoVazio nome="Cartões" /> : null;
       const colunas = ["1", "2", "3"].includes(s(d.colunas)) ? s(d.colunas) : "3";
       const destaque = d.estilo === "destaque";
@@ -156,7 +160,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
             <div className={`cartoes c${colunas}${destaque ? " destaque" : ""}`}>
               {itens.map((it, i) =>
                 destaque ? (
-                  <div className="flow" key={i}>
+                  <div className={`flow${corDe(it.cor)}`} key={i}>
                     <div style={{ position: "relative", zIndex: 1 }}>
                       {it.etiqueta ? <span className="tag">{it.etiqueta}</span> : null}
                       <h2>{it.titulo}</h2>
@@ -167,7 +171,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
                     ) : null}
                   </div>
                 ) : (
-                  <Lnk url={it.url} className={`tool${it.url ? "" : " sem-link"}`} key={i}>
+                  <Lnk url={it.url} className={`tool${it.url ? "" : " sem-link"}${corDe(it.cor)}`} key={i}>
                     <span className="ic"><Icone nome={it.icone} /></span>
                     <h4>{it.titulo}</h4>
                     {it.texto ? <p>{it.texto}</p> : null}
@@ -209,7 +213,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
       return (
         <section className="bloco">
           <div className="wrap">
-            <Titulo titulo={s(d.titulo)} ver={{ texto: s(d.ver_todas_texto), url: s(d.ver_todas_url) }} />
+            <Titulo titulo={s(d.titulo)} ver={ctx.slug && ctx.slug !== "ferramentas" ? { texto: "Ver todas as ferramentas →", url: "/painel/ferramentas" } : undefined} />
             {destaques.map((x) => (
               <a className="start" href={x.url} target="_blank" rel="noopener noreferrer" key={x.id} style={{ marginBottom: 14 }}>
                 <div style={{ position: "relative", zIndex: 1 }}>
@@ -231,21 +235,37 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
     }
 
     case "feed": {
-      const posts = await listarPosts({ email: ctx.email, limite: Number(d.limite) || 10, soFixados: !!d.so_fixadas });
+      const slug = ctx.slug ?? "";
+      // blocos antigos (sem "modo"): só-fixadas e o Início viram "destacadas"; o resto, "desta página"
+      const modo = d.modo === "pagina" || d.modo === "destacadas" || d.modo === "todas" ? d.modo : d.so_fixadas || slug === "inicio" ? "destacadas" : "pagina";
+      const posts = await listarPosts({
+        email: ctx.email,
+        limite: 100,
+        soFixados: modo === "destacadas",
+        pagina: modo === "pagina" && slug ? slug : undefined,
+        comNovidades: slug === "novidades",
+      });
+      const podePostar = ctx.admin && modo === "pagina";
       return (
         <section className="bloco">
           <div className="wrap">
-            <Titulo titulo={s(d.titulo)} ver={{ texto: s(d.ver_todas_texto), url: s(d.ver_todas_url) }} />
-            {ctx.admin && Number(d.limite) > 5 && (
+            <Titulo titulo={s(d.titulo)} />
+            {podePostar && (
               <div style={{ marginBottom: 18 }}>
-                <NovaPostagem />
+                <NovaPostagem destino={slug === "novidades" ? "" : slug} />
               </div>
             )}
             {posts.length === 0 ? (
               <div className="vazio-card">
-                <b>Ainda não há postagens.</b>
-                <p>Assim que a equipe publicar uma novidade, ela aparece aqui.</p>
-                {ctx.admin && <NovaPostagem rotulo="Criar a primeira postagem" />}
+                <b>{modo === "destacadas" ? "Nenhuma postagem em destaque." : "Ainda não há postagens."}</b>
+                <p>
+                  {modo === "destacadas"
+                    ? ctx.admin
+                      ? "Abra o ⋯ de uma postagem e escolha “Destacar no Início”."
+                      : "Em breve a equipe destaca algo por aqui."
+                    : "Assim que a equipe publicar uma novidade, ela aparece aqui."}
+                </p>
+                {podePostar && <NovaPostagem rotulo="Criar a primeira postagem" destino={slug === "novidades" ? "" : slug} />}
               </div>
             ) : (
               <div className="feed">
