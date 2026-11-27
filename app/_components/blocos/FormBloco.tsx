@@ -186,7 +186,7 @@ function Previa({ tipo, dados, slug }: { tipo: TipoBloco; dados: Dados; slug: st
   const [, comecar] = useTransition();
   const [escala, setEscala] = useState(0.5);
   const [altura, setAltura] = useState(0);
-  const caixa = useRef<HTMLDivElement>(null);
+  const moldura = useRef<HTMLDivElement>(null);
   const miolo = useRef<HTMLDivElement>(null);
   const json = JSON.stringify(dados);
 
@@ -207,21 +207,22 @@ function Previa({ tipo, dados, slug }: { tipo: TipoBloco; dados: Dados; slug: st
   }, [tipo, json, slug]);
 
   const medir = useCallback(() => {
-    if (caixa.current) setEscala(Math.min(1, caixa.current.clientWidth / LARGURA_PREVIA));
+    // mede a área ÚTIL (sem o respiro da borda), senão o último cartão fica cortado
+    if (moldura.current) setEscala(Math.min(1, moldura.current.clientWidth / LARGURA_PREVIA));
     if (miolo.current) setAltura(miolo.current.scrollHeight);
   }, []);
   useEffect(() => {
     medir();
     const o = new ResizeObserver(medir);
-    if (caixa.current) o.observe(caixa.current);
+    if (moldura.current) o.observe(moldura.current);
     if (miolo.current) o.observe(miolo.current);
     return () => o.disconnect();
   }, [medir, vista]);
 
   return (
-    <div className="previa-caixa" ref={caixa}>
+    <div className="previa-caixa">
       {vazia && <p className="dica">Preencha os campos para ver a prévia.</p>}
-      <div className="previa-moldura" style={{ height: altura * escala }}>
+      <div className="previa-moldura" ref={moldura} style={{ height: altura * escala }}>
         <div className="previa-miolo" ref={miolo} style={{ width: LARGURA_PREVIA, transform: `scale(${escala})` }}>
           {vista}
         </div>
