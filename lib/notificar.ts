@@ -1,5 +1,9 @@
 import "server-only";
-import webpush from "web-push";
+import * as webpushModulo from "web-push";
+
+// web-push é CommonJS: dependendo de como o servidor o carrega, as funções ficam em "default" ou direto no módulo
+type WebPush = typeof import("web-push");
+const webpush: WebPush = ((webpushModulo as unknown as { default?: WebPush }).default ?? webpushModulo) as WebPush;
 import { revalidateTag, unstable_cache } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
