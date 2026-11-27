@@ -91,7 +91,7 @@ export async function marcarLidas(email: string, revalidar = false) {
   }
 }
 
-export type Resultado = { ok: boolean; push: number; falhas: number; semPush?: boolean; erro?: string };
+export type Resultado = { ok: boolean; push: number; falhas: number; semPush?: boolean; erro?: string; erroPush?: string };
 
 /** Cria a notificação para toda a comunidade (sino) e dispara o push para quem ativou. */
 export async function notificarTodos(n: {
@@ -123,6 +123,21 @@ export async function notificarTodos(n: {
 
   if (!pushConfigurado()) return { ok: true, push: 0, falhas: 0, semPush: true };
 
+  // a notificação do sino já foi criada; um problema no push não pode derrubar o envio nem esconder o motivo
+  try {
+    return await enviarPush(db, id, n, texto);
+  } catch (e) {
+    const motivo = (e as { message?: string } | null)?.message ?? "erro desconhecido";
+    return { ok: true, push: 0, falhas: 0, erroPush: motivo.slice(0, 160) };
+  }
+}
+
+async function enviarPush(
+  db: ReturnType<typeof supabaseAdmin>,
+  id: string,
+  n: { titulo: string; link?: string | null; imagemUrl?: string | null },
+  texto: string,
+): Promise<Resultado> {
   webpush.setVapidDetails(
     process.env.VAPID_SUBJECT ?? "https://dominion-mentory-three.vercel.app",
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,

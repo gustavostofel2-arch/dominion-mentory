@@ -685,7 +685,9 @@ export async function enviarComunicado(form: FormData) {
     emitirDepois({ t: "notificacao" });
     msg = r.semPush
       ? "Notificação enviada no sino (o push ainda não está configurado)."
-      : `Notificação enviada no sino e por push para ${r.push} aparelho(s).`;
+      : r.erroPush
+        ? `Notificação enviada no sino, mas o push falhou: ${r.erroPush}. Confira as chaves VAPID na Vercel.`
+        : `Notificação enviada no sino e por push para ${r.push} aparelho(s).${r.falhas ? ` (${r.falhas} falharam)` : ""}`;
   } catch (e) {
     falhou(NOTIFS, e);
   }
