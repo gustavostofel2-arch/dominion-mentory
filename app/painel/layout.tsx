@@ -65,6 +65,14 @@ export default async function PainelLayout({ children }: { children: React.React
           const ext = !!it.url && !it.url.startsWith("/");
           entradas.push({ titulo: it.titulo, descricao: it.texto ?? "", grupo: p.titulo, url: it.url || url, externo: ext });
         }
+      } else if (b.tipo === "secoes" && Array.isArray(d.secoes)) {
+        for (const sec of d.secoes as { titulo?: string; itens?: { titulo?: string; texto?: string; url?: string }[] }[]) {
+          for (const it of sec.itens ?? []) {
+            if (!it.titulo) continue;
+            const ext = !!it.url && !it.url.startsWith("/");
+            entradas.push({ titulo: it.titulo, descricao: it.texto ?? "", grupo: sec.titulo || p.titulo, url: it.url || url, externo: ext });
+          }
+        }
       } else if (b.tipo === "corrida" && d.titulo) {
         entradas.push({ titulo: String(d.titulo), descricao: String(d.texto ?? ""), grupo: p.titulo, url, externo: false });
       }

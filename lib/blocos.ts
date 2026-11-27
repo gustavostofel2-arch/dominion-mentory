@@ -32,6 +32,7 @@ export type TipoBloco =
   | "imagem_texto"
   | "faq"
   | "cartoes"
+  | "secoes"
   | "botoes"
   | "ferramentas"
   | "feed"
@@ -169,6 +170,49 @@ export const BLOCOS: Record<TipoBloco, DefBloco> = {
     ],
     padrao: { titulo: "", colunas: "3", estilo: "padrao", itens: [{ icone: "grid", etiqueta: "", titulo: "Novo cartão", texto: "", url: "", botao: "Abrir" }] },
   },
+  secoes: {
+    tipo: "secoes",
+    nome: "Seções de cartões",
+    descricao: "Cartões agrupados por seção (ex.: “Método e aulas”, “Ferramentas”). Você cria as seções e cada cartão aqui mesmo, um por um.",
+    icone: "layers",
+    campos: [
+      T("titulo", "Título do bloco (opcional)", { max: 120 }),
+      S("colunas", "Cartões por linha", [["2", "2"], ["3", "3"], ["4", "4"]]),
+      {
+        k: "lista",
+        nome: "secoes",
+        rotulo: "Seções",
+        rotuloItem: "Seção",
+        max: 12,
+        novo: { titulo: "Nova seção", itens: [{ icone: "grid", cor: "", etiqueta: "", titulo: "Novo cartão", texto: "", url: "", botao: "abrir" }] },
+        item: [
+          T("titulo", "Nome da seção", { max: 80, placeholder: "Ex.: Método e aulas" }),
+          {
+            k: "lista",
+            nome: "itens",
+            rotulo: "Cartões da seção",
+            rotuloItem: "Cartão",
+            max: 24,
+            novo: { icone: "grid", cor: "", etiqueta: "", titulo: "Novo cartão", texto: "", url: "", botao: "abrir" },
+            item: [
+              { k: "icone", nome: "icone", rotulo: "Ícone" },
+              S("cor", "Cor do cartão", [["", "Neutra"], ["azul", "Azul"], ["laranja", "Laranja"], ["verde", "Verde"], ["roxo", "Roxo"], ["vermelho", "Vermelho"]]),
+              T("etiqueta", "Etiqueta (opcional)", { max: 30, placeholder: "Ex.: Aula, Guia, Calculadora" }),
+              T("titulo", "Título", { max: 120 }),
+              A("texto", "Descrição", { max: 300 }),
+              U("url", "Link (abre em outra aba)"),
+              T("botao", "Texto do botão", { max: 20, placeholder: "abrir" }),
+            ],
+          },
+        ],
+      },
+    ],
+    padrao: {
+      titulo: "",
+      colunas: "3",
+      secoes: [{ titulo: "Nova seção", itens: [{ icone: "grid", cor: "", etiqueta: "", titulo: "Novo cartão", texto: "", url: "", botao: "abrir" }] }],
+    },
+  },
   botoes: {
     tipo: "botoes",
     nome: "Botões",
@@ -191,7 +235,7 @@ export const BLOCOS: Record<TipoBloco, DefBloco> = {
   ferramentas: {
     tipo: "ferramentas",
     nome: "Ferramentas e aulas",
-    descricao: "Mostra os módulos e ferramentas cadastrados em Admin → Módulos e ferramentas.",
+    descricao: "Mostra AUTOMATICAMENTE os módulos cadastrados em Admin → Módulos e ferramentas (você não edita cartão por cartão aqui). Para criar e editar cada cartão direto na página, use “Seções de cartões”.",
     icone: "calc",
     campos: [
       T("titulo", "Título (opcional)", { max: 120 }),
@@ -372,6 +416,12 @@ export function normalizarDados(tipo: TipoBloco, bruto: unknown): Dados {
   if (tipo === "faq") d.itens = filtrar(d.itens, "pergunta");
   if (tipo === "cartoes") d.itens = filtrar(d.itens, "titulo");
   if (tipo === "botoes") d.itens = filtrar(d.itens, "texto");
+  if (tipo === "secoes") {
+    // cartão sem título some; seção sem cartões some
+    d.secoes = (Array.isArray(d.secoes) ? (d.secoes as Dados[]) : [])
+      .map((sec) => ({ ...sec, itens: filtrar(sec.itens, "titulo") }))
+      .filter((sec) => (sec.itens as Dados[]).length > 0);
+  }
   return d;
 }
 

@@ -189,6 +189,37 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
       );
     }
 
+    case "secoes": {
+      const secoes = arr<{ titulo: string; itens: { icone: string; cor?: string; etiqueta: string; titulo: string; texto: string; url: string; botao: string }[] }>(d.secoes).filter((x) => arr(x.itens).length);
+      if (!secoes.length) return ctx.admin ? <BlocoVazio nome="Seções de cartões" /> : null;
+      const colunas = ["2", "3", "4"].includes(s(d.colunas)) ? s(d.colunas) : "3";
+      return (
+        <section className="bloco">
+          <div className="wrap">
+            <Titulo titulo={s(d.titulo)} />
+            {secoes.map((sec, k) => (
+              <div className="group" key={k}>
+                {sec.titulo ? <h3>{sec.titulo}</h3> : null}
+                <div className={`grid sec-c${colunas}`}>
+                  {arr<(typeof sec.itens)[number]>(sec.itens).map((it, i) => (
+                    <Lnk url={it.url} className={`tool${it.url ? "" : " sem-link"}${corDe(it.cor)}`} key={i}>
+                      <span className="ic"><Icone nome={it.icone} /></span>
+                      <h4>{it.titulo}</h4>
+                      {it.texto ? <p>{it.texto}</p> : null}
+                      <div className="row">
+                        {it.etiqueta ? <span className="chip op">{it.etiqueta}</span> : <span />}
+                        {it.url ? <span className="open">{(it.botao || "abrir").toLowerCase()} →</span> : null}
+                      </div>
+                    </Lnk>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
     case "botoes": {
       const itens = arr<{ texto: string; url: string; estilo: string }>(d.itens).filter((i) => i.texto && i.url);
       if (!itens.length) return ctx.admin ? <BlocoVazio nome="Botões" /> : null;

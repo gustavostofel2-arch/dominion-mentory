@@ -615,3 +615,11 @@ a.notif-item:hover{background:var(--surface-2)}
 .modal-fundo:has(.modal.larga){padding-top:0}
 .modal.larga{border-radius:0 0 20px 20px;margin-top:0}
 .modal.larga .modal-topo{border-radius:0}
+
+/* seções de cartões */
+.grid.sec-c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid.sec-c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid.sec-c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:1000px){.grid.sec-c4{grid-template-columns:repeat(2,minmax(0,1fr))}.grid.sec-c3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.grid.sec-c2,.grid.sec-c3,.grid.sec-c4{grid-template-columns:minmax(0,1fr)}}
+.tool.sem-link{cursor:default}
