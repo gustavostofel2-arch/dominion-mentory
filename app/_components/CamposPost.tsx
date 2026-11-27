@@ -4,7 +4,6 @@ import { useState } from "react";
 import EditorTexto from "./EditorTexto";
 import UploadImagem from "./UploadImagem";
 import CampoEmoji from "./CampoEmoji";
-import { useDestinos } from "./Destinos";
 
 export type PostEditavel = {
   id: string;
@@ -22,9 +21,25 @@ export type PostEditavel = {
 };
 
 /** Campos da postagem, iguais ao criar (Admin) e ao editar (menu ⋯ no feed). */
-export default function CamposPost({ post, retorno, destino }: { post?: PostEditavel; retorno: string; destino?: string }) {
-  const destinos = useDestinos();
-  const inicial = post ? post.paginaSlug ?? "" : destino ?? "";
+export type OpcaoDestino = { slug: string; rotulo: string };
+
+/**
+ * `destino`: a postagem fica NESSA página (quem abriu o formulário de dentro de uma página). Nada para escolher.
+ * `opcoes`: só no Admin → Postagens: lista das páginas que têm um bloco de postagens.
+ */
+export default function CamposPost({
+  post,
+  retorno,
+  destino,
+  opcoes,
+}: {
+  post?: PostEditavel;
+  retorno: string;
+  destino?: string;
+  opcoes?: OpcaoDestino[];
+}) {
+  const fixo = destino ?? (opcoes ? undefined : post?.paginaSlug ?? "novidades");
+  const inicial = post?.paginaSlug ?? opcoes?.[0]?.slug ?? "novidades";
   const [virarAviso, setVirarAviso] = useState(!!post?.avisoTipo);
   return (
     <div className="campos-post">
@@ -40,14 +55,17 @@ export default function CamposPost({ post, retorno, destino }: { post?: PostEdit
 
       <UploadImagem atual={post?.imagemUrl} formatoAtual={post?.formato} />
 
-      <div className="fld">
-        <label>Onde publicar</label>
-        <select name="pagina_slug" defaultValue={destinos.some((d) => d.slug === inicial) ? inicial : ""}>
-          <option value="">Novidades</option>
-          {destinos.filter((d) => d.slug !== "novidades").map((d) => <option key={d.slug} value={d.slug}>{d.rotulo}</option>)}
-        </select>
-        <p className="dica">A postagem aparece só nessa página (e no Início, se você destacar).</p>
-      </div>
+      {fixo !== undefined ? (
+        <input type="hidden" name="pagina_slug" value={fixo} />
+      ) : (
+        <div className="fld">
+          <label>Em qual página publicar</label>
+          <select name="pagina_slug" defaultValue={inicial}>
+            {(opcoes ?? []).map((d) => <option key={d.slug} value={d.slug}>{d.rotulo}</option>)}
+          </select>
+          <p className="dica">Só aparecem as páginas que têm um bloco de Postagens.</p>
+        </div>
+      )}
 
       <fieldset className="opcoes">
         <legend>Onde aparece</legend>
@@ -57,7 +75,7 @@ export default function CamposPost({ post, retorno, destino }: { post?: PostEdit
         </label>
         <label className="chk">
           <input type="checkbox" name="fixado" defaultChecked={post?.fixado ?? false} />
-          <span><b>Destacar</b> <small>(fica no topo da página e aparece no Início, com o selo “Destaque”)</small></span>
+          <span><b>Destacar</b> <small>(fica sempre no topo da página, com o selo “Destaque”)</small></span>
         </label>
       </fieldset>
 

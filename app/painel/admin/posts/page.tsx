@@ -2,7 +2,17 @@ import Link from "next/link";
 import { listarPostsAdmin, formatarData } from "@/lib/feed";
 import { criarPost, excluirPost, salvarPost } from "../actions";
 import ConfirmButton from "../ConfirmButton";
-import CamposPost from "../../../_components/CamposPost";
+import CamposPost, { type OpcaoDestino } from "../../../_components/CamposPost";
+import { carregarPainel, rotuloMenu } from "@/lib/paginas";
+import { modoFeed } from "@/lib/blocos";
+
+/** Páginas que têm um bloco de Postagens que mostra as postagens da própria página (é onde dá para publicar). */
+async function destinosDePostagem(): Promise<OpcaoDestino[]> {
+  const { paginas } = await carregarPainel();
+  return paginas
+    .filter((p) => p.blocos.some((b) => b.tipo === "feed" && modoFeed(b.dados) === "pagina"))
+    .map((p) => ({ slug: p.slug, rotulo: rotuloMenu(p) }));
+}
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { paraCampoData } from "@/lib/agenda";
 
@@ -23,7 +33,8 @@ const RETORNO = "/painel/admin/posts";
 export default async function AdminPosts() {
   // as mensagens (?ok= / ?erro=) são lidas no navegador pelo MensagemAdmin; a página não depende da URL
   const searchParams = Promise.resolve({} as { ok?: string; erro?: string });
-  const [{ ok, erro }, posts, agenda] = await Promise.all([searchParams, listarPostsAdmin(), agendadas()]);
+  const [{ ok, erro }, posts, agenda, destinos] = await Promise.all([searchParams, listarPostsAdmin(), agendadas(), destinosDePostagem()]);
+  const rotuloDe = (slug: string | null) => destinos.find((d) => d.slug === (slug ?? "novidades"))?.rotulo ?? (slug ? slug : "Novidades");
   return (
     <>
       {ok && <div className="nota">{ok}</div>}
@@ -36,12 +47,19 @@ export default async function AdminPosts() {
 
       <div className="panel" id="novo">
         <h2>Nova postagem</h2>
-        <form action={criarPost}>
-          <CamposPost retorno={RETORNO} />
-          <div className="acts">
-            <button className="btn primary" type="submit">Publicar</button>
-          </div>
-        </form>
+        {destinos.length === 0 ? (
+          <p className="dica">
+            Nenhuma página tem um bloco de <b>Postagens</b> ainda. Abra uma página, clique em “Editar página” → “Adicionar bloco” → “Postagens (feed)” e escolha
+            “as desta página”. Depois você posta direto nela, ou por aqui.
+          </p>
+        ) : (
+          <form action={criarPost}>
+            <CamposPost retorno={RETORNO} opcoes={destinos} />
+            <div className="acts">
+              <button className="btn primary" type="submit">Publicar</button>
+            </div>
+          </form>
+        )}
       </div>
 
       <h3 style={{ fontSize: ".95rem", margin: "26px 0 4px" }}>Postagens criadas</h3>
@@ -53,11 +71,12 @@ export default async function AdminPosts() {
             {p.fixado && <span className="badge-off" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>fixada</span>}
             {p.avisoTipo && <span className="badge-off" style={{ background: "var(--wait-soft)", color: "var(--wait)" }}>aviso</span>}
             {agenda.has(p.id) ? <span className="badge-off" style={{ background: "var(--wait-soft)", color: "var(--wait)" }}>agendada</span> : !p.publicado && <span className="badge-off">rascunho</span>}
-            <span className="meta">{formatarData(p.criadoEm)} · ♥ {p.curtidas} · 💬 {p.comentarios}</span>
+            <span className="meta">{rotuloDe(p.paginaSlug)} · {formatarData(p.criadoEm)} · ♥ {p.curtidas} · 💬 {p.comentarios}</span>
           </summary>
           <form>
             <CamposPost
               retorno={RETORNO}
+              opcoes={destinos.some((d) => d.slug === (p.paginaSlug ?? "novidades")) ? destinos : [...destinos, { slug: p.paginaSlug ?? "novidades", rotulo: rotuloDe(p.paginaSlug) }]}
               post={{
                 id: p.id,
                 titulo: p.titulo,

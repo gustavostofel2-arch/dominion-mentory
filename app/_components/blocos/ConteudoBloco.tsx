@@ -5,6 +5,7 @@ import type { Dados } from "@/lib/blocos";
 import { renderConteudo } from "@/lib/doc";
 import { carregarAvisos, carregarCatalogo } from "@/lib/catalogo";
 import { listarPosts } from "@/lib/feed";
+import { modoFeed } from "@/lib/blocos";
 import { SaudacaoBloco } from "../Nome";
 import { Icone } from "../Icone";
 import AvisosCarrossel from "../AvisosCarrossel";
@@ -236,8 +237,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
 
     case "feed": {
       const slug = ctx.slug ?? "";
-      // blocos antigos (sem "modo"): só-fixadas e o Início viram "destacadas"; o resto, "desta página"
-      const modo = d.modo === "pagina" || d.modo === "destacadas" || d.modo === "todas" ? d.modo : d.so_fixadas || slug === "inicio" ? "destacadas" : "pagina";
+      const modo = modoFeed(d);
       const posts = await listarPosts({
         email: ctx.email,
         limite: 100,
@@ -252,7 +252,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
             <Titulo titulo={s(d.titulo)} />
             {podePostar && (
               <div style={{ marginBottom: 18 }}>
-                <NovaPostagem destino={slug === "novidades" ? "" : slug} />
+                <NovaPostagem destino={slug} />
               </div>
             )}
             {posts.length === 0 ? (
@@ -265,7 +265,7 @@ export default async function ConteudoBloco({ bloco, ctx }: { bloco: Bloco; ctx:
                       : "Em breve a equipe destaca algo por aqui."
                     : "Assim que a equipe publicar uma novidade, ela aparece aqui."}
                 </p>
-                {podePostar && <NovaPostagem rotulo="Criar a primeira postagem" destino={slug === "novidades" ? "" : slug} />}
+                {podePostar && <NovaPostagem rotulo="Criar a primeira postagem" destino={slug} />}
               </div>
             ) : (
               <div className="feed">

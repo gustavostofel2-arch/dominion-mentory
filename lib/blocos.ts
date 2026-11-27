@@ -385,3 +385,13 @@ export function comPadrao(tipo: TipoBloco, dados: unknown): Dados {
 export const ICONES_PAGINA = [
   "home", "megaphone", "grid", "bolt", "trophy", "book", "layers", "calc", "gauge", "chart", "bag", "hanger", "user", "tag", "news", "bell", "shield",
 ] as const;
+
+/**
+ * Quais postagens um bloco "Postagens" mostra. Blocos antigos (sem "modo"): "só fixadas" vira "destacadas";
+ * o resto mostra as postagens da própria página.
+ */
+export function modoFeed(dados: unknown): "pagina" | "destacadas" | "todas" {
+  const d = (dados && typeof dados === "object" ? dados : {}) as Dados;
+  if (d.modo === "pagina" || d.modo === "destacadas" || d.modo === "todas") return d.modo;
+  return d.so_fixadas ? "destacadas" : "pagina";
+}

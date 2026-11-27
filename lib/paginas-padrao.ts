@@ -158,7 +158,7 @@ export const PAGINAS_PADRAO: PaginaPadrao[] = [
       },
       {
         tipo: "feed",
-        dados: { titulo: "Em destaque", modo: "destacadas" },
+        dados: { titulo: "Novidades da equipe", modo: "pagina" },
       },
       {
         tipo: "ferramentas",

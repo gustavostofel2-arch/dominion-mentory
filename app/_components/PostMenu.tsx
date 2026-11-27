@@ -24,7 +24,7 @@ export default function PostMenu({ post }: { post: PostEditavel }) {
   const base = { id: post.id, retorno };
   const itens: ItemMenu[] = [
     { rotulo: "Editar", aoClicar: () => setEditando(true) },
-    { rotulo: post.fixado ? "Tirar o destaque" : "Destacar (topo e Início)", acao: fixarPost, campos: { ...base, fixar: post.fixado ? "0" : "1" } },
+    { rotulo: post.fixado ? "Tirar o destaque" : "Destacar no topo", acao: fixarPost, campos: { ...base, fixar: post.fixado ? "0" : "1" } },
     post.publicado
       ? {
           rotulo: post.avisoTipo ? "Remover dos avisos do Início" : "Transformar em aviso",
@@ -45,7 +45,7 @@ export default function PostMenu({ post }: { post: PostEditavel }) {
   return (
     <>
       <MenuPontos itens={itens} rotulo="Opções da postagem" />
-      {editando && <EditarPostModal post={post} retorno={retorno} aoFechar={() => setEditando(false)} />}
+      {editando && <EditarPostModal post={post} retorno={retorno} destino={post.paginaSlug ?? "novidades"} aoFechar={() => setEditando(false)} />}
     </>
   );
 }
