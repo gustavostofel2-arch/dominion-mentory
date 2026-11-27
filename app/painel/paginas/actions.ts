@@ -458,3 +458,33 @@ export async function restaurarPaginasPadrao() {
   limparTudo();
   ir(ADMIN_PAGINAS, "ok", criadas ? `${criadas} página(s) padrão restaurada(s).` : "Todas as páginas padrão já existem.");
 }
+
+/**
+ * Salvar o bloco SEM recarregar a página: devolve o resultado e o editor atualiza a tela por conta própria.
+ */
+export async function salvarBlocoRapido(id: string, dadosJson: string): Promise<{ ok: true } | { ok: false; erro: string }> {
+  await exigirAdmin();
+  if (!UUID.test(id)) return { ok: false, erro: "Bloco não encontrado." };
+  if (dadosJson.length > 400000) return { ok: false, erro: "Os dados do bloco estão grandes demais." };
+  let bruto: unknown;
+  try {
+    bruto = JSON.parse(dadosJson);
+  } catch {
+    return { ok: false, erro: "Não consegui ler os dados do bloco. Recarregue a página e tente de novo." };
+  }
+  try {
+    const db = supabaseAdmin();
+    const { data, error } = await db.from("blocos").select("tipo").eq("id", id).maybeSingle();
+    if (error) throw error;
+    const tipo = (data as { tipo?: string } | null)?.tipo;
+    if (!tipo || !ehTipo(tipo)) return { ok: false, erro: "Bloco não encontrado." };
+    const r = await db.from("blocos").update({ dados: normalizarDados(tipo as TipoBloco, bruto) }).eq("id", id);
+    if (r.error) throw r.error;
+  } catch (e) {
+    const m = (e as { message?: string } | null)?.message ?? "";
+    return { ok: false, erro: /does not exist|schema cache|relation/i.test(m) ? "As tabelas de páginas ainda não existem no Supabase (rode a etapa 5)." : "Não foi possível salvar agora. Tente de novo." };
+  }
+  limparTudo();
+  avisar();
+  return { ok: true };
+}

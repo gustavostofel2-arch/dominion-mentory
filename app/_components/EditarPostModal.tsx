@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import CamposPost, { type PostEditavel } from "./CamposPost";
 import { criarPost, salvarPost } from "../painel/admin/actions";
 
@@ -29,7 +30,7 @@ export default function EditarPostModal({ post, retorno, destino, aoFechar }: { 
     return () => clearTimeout(t);
   }, [enviando, aoFechar]);
 
-  return (
+  const janela = (
     <div
       className="modal-fundo"
       role="presentation"
@@ -51,4 +52,5 @@ export default function EditarPostModal({ post, retorno, destino, aoFechar }: { 
       </div>
     </div>
   );
+  return typeof document === "undefined" ? janela : createPortal(janela, document.body);
 }

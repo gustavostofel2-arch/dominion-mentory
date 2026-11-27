@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BLOCOS, ICONES_PAGINA, comPadrao, type Campo, type Dados, type TipoBloco } from "@/lib/blocos";
-import { salvarBloco } from "../../painel/paginas/actions";
+import { salvarBlocoRapido } from "../../painel/paginas/actions";
+import { previaBloco } from "../../painel/paginas/previa";
+import { mostrarToast } from "@/lib/toast";
 import EditorTexto from "../EditorTexto";
 import { Icone } from "../Icone";
 import CampoImagem from "./CampoImagem";
@@ -41,7 +45,8 @@ function CampoUI({ c, valor, mudar, modulos }: { c: Campo; valor: unknown; mudar
       return (
         <div className="fld">
           {rotulo}
-          <textarea value={String(valor ?? "")} maxLength={c.max ?? 1000} placeholder={c.placeholder} onChange={(e) => mudar(e.target.value)} />
+          <textarea className="area-grande" value={String(valor ?? "")} maxLength={c.max ?? 1000} placeholder={c.placeholder} onChange={(e) => mudar(e.target.value)} />
+          <small className="contador">{String(valor ?? "").length} / {c.max ?? 1000} caracteres</small>
           {dica}
         </div>
       );
@@ -172,6 +177,59 @@ function CampoUI({ c, valor, mudar, modulos }: { c: Campo; valor: unknown; mudar
   }
 }
 
+const LARGURA_PREVIA = 1040;
+
+/** Prévia ao vivo: mostra o bloco como os alunos vão ver (em tamanho de computador, reduzido para caber ao lado). */
+function Previa({ tipo, dados, slug }: { tipo: TipoBloco; dados: Dados; slug: string }) {
+  const [vista, setVista] = useState<ReactNode>(null);
+  const [vazia, setVazia] = useState(false);
+  const [, comecar] = useTransition();
+  const [escala, setEscala] = useState(0.5);
+  const [altura, setAltura] = useState(0);
+  const caixa = useRef<HTMLDivElement>(null);
+  const miolo = useRef<HTMLDivElement>(null);
+  const json = JSON.stringify(dados);
+
+  // atualiza 0,5 s depois da última tecla
+  useEffect(() => {
+    const t = setTimeout(() => {
+      comecar(async () => {
+        try {
+          const r = await previaBloco(tipo, json, slug);
+          setVista(r);
+          setVazia(r === null);
+        } catch {
+          setVazia(true);
+        }
+      });
+    }, 450);
+    return () => clearTimeout(t);
+  }, [tipo, json, slug]);
+
+  const medir = useCallback(() => {
+    if (caixa.current) setEscala(Math.min(1, caixa.current.clientWidth / LARGURA_PREVIA));
+    if (miolo.current) setAltura(miolo.current.scrollHeight);
+  }, []);
+  useEffect(() => {
+    medir();
+    const o = new ResizeObserver(medir);
+    if (caixa.current) o.observe(caixa.current);
+    if (miolo.current) o.observe(miolo.current);
+    return () => o.disconnect();
+  }, [medir, vista]);
+
+  return (
+    <div className="previa-caixa" ref={caixa}>
+      {vazia && <p className="dica">Preencha os campos para ver a prévia.</p>}
+      <div className="previa-moldura" style={{ height: altura * escala }}>
+        <div className="previa-miolo" ref={miolo} style={{ width: LARGURA_PREVIA, transform: `scale(${escala})` }}>
+          {vista}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Janela para editar um bloco. O formulário é gerado a partir da descrição do tipo. */
 export default function FormBloco({
   bloco,
@@ -194,12 +252,40 @@ export default function FormBloco({
     return d;
   });
   const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState("");
+  const [salvando, salvar] = useTransition();
+  const router = useRouter();
+  const caminho = usePathname();
+  const params = useSearchParams();
+  const slug = caminho === "/painel" ? "inicio" : caminho.split("/")[2] ?? "";
+
+  function fechar() {
+    // bloco recém-criado abre sozinho pelo "?novo=": limpa para não reabrir
+    if (params.get("novo")) router.replace(caminho, { scroll: false });
+    aoFechar();
+  }
+
+  function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    setErro("");
+    salvar(async () => {
+      const r = await salvarBlocoRapido(bloco.id, JSON.stringify(dados));
+      if (!r.ok) {
+        setErro(r.erro);
+        return;
+      }
+      mostrarToast({ texto: "Bloco salvo.", tipo: "ok" });
+      router.refresh(); // atualiza só o conteúdo, sem recarregar a página nem voltar ao topo
+      fechar();
+    });
+  }
 
   useEffect(() => {
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && !enviando && aoFechar();
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && !enviando && !salvando && fechar();
     document.addEventListener("keydown", esc);
     return () => document.removeEventListener("keydown", esc);
-  }, [aoFechar, enviando]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aoFechar, enviando, salvando]);
 
   useEffect(() => {
     const antes = document.body.style.overflow;
@@ -215,30 +301,36 @@ export default function FormBloco({
     return () => clearTimeout(t);
   }, [enviando, aoFechar]);
 
-  return (
-    <div className="modal-fundo" role="presentation" hidden={enviando} onMouseDown={(e) => e.target === e.currentTarget && aoFechar()}>
-      <div className="modal" role="dialog" aria-modal="true" aria-label={`Editar bloco ${def.nome}`}>
+  const janela = (
+    <div className="modal-fundo" role="presentation" hidden={enviando} onMouseDown={(e) => e.target === e.currentTarget && !salvando && fechar()}>
+      <div className="modal larga" role="dialog" aria-modal="true" aria-label={`Editar bloco ${def.nome}`}>
         <header className="modal-topo">
           <b>{def.nome}</b>
-          <button type="button" className="x" aria-label="Fechar" onClick={aoFechar}>×</button>
+          <button type="button" className="x" aria-label="Fechar" onClick={fechar}>×</button>
         </header>
-        <form action={salvarBloco} className="modal-corpo" onSubmit={() => setEnviando(true)}>
-          <input type="hidden" name="id" value={bloco.id} />
-          <input type="hidden" name="retorno" value={retorno} />
-          <input type="hidden" name="dados" value={JSON.stringify(dados)} />
-          <p className="dica" style={{ marginBottom: 14 }}>{def.descricao}</p>
-          <div className="campos-post">
-            {def.campos.length === 0 && <p className="dica">Este bloco não tem opções para editar.</p>}
-            {def.campos.map((c) => (
-              <CampoUI key={c.nome} c={c} valor={dados[c.nome]} mudar={(v) => setDados((d) => ({ ...d, [c.nome]: v }))} modulos={modulos} />
-            ))}
+        <form className="modal-duas" onSubmit={enviar}>
+          <div className="modal-corpo">
+            <p className="dica" style={{ marginBottom: 14 }}>{def.descricao}</p>
+            <div className="campos-post">
+              {def.campos.length === 0 && <p className="dica">Este bloco não tem opções para editar.</p>}
+              {def.campos.map((c) => (
+                <CampoUI key={c.nome} c={c} valor={dados[c.nome]} mudar={(v) => setDados((d) => ({ ...d, [c.nome]: v }))} modulos={modulos} />
+              ))}
+            </div>
+            {erro && <p className="erro-in" role="alert" style={{ marginTop: 12 }}>{erro}</p>}
+            <div className="modal-rodape">
+              <button type="button" className="btn" onClick={fechar} disabled={salvando}>Cancelar</button>
+              <button type="submit" className="btn primary" disabled={salvando}>{salvando ? "Salvando…" : "Salvar bloco"}</button>
+            </div>
           </div>
-          <div className="modal-rodape">
-            <button type="button" className="btn" onClick={aoFechar}>Cancelar</button>
-            <button type="submit" className="btn primary">Salvar bloco</button>
-          </div>
+          <aside className="previa-painel" aria-label="Prévia ao vivo">
+            <div className="previa-topo"><b>Prévia ao vivo</b><span>como os alunos vão ver</span></div>
+            <Previa tipo={bloco.tipo} dados={dados} slug={slug} />
+          </aside>
         </form>
       </div>
     </div>
   );
+  // em portal: fora das molduras da página, para ficar SEMPRE por cima do menu e das barras do topo
+  return typeof document === "undefined" ? janela : createPortal(janela, document.body);
 }

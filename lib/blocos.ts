@@ -61,7 +61,7 @@ export const BLOCOS: Record<TipoBloco, DefBloco> = {
     campos: [
       T("etiqueta", "Texto pequeno acima (opcional)", { max: 80 }),
       T("titulo", "Título", { max: 120, placeholder: "Olá, {nome}", dica: "Use {nome} (ou [nome]) para mostrar o primeiro nome de quem está vendo. Ex.: Olá, {nome}. Bem-vindo!" }),
-      A("texto", "Frase abaixo (opcional)", { max: 300 }),
+      A("texto", "Frase abaixo (opcional)", { max: 800 }),
     ],
     padrao: { etiqueta: "", titulo: "Olá, {nome}", texto: "" },
   },
